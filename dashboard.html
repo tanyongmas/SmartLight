@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แผงควบคุมเจ้าหน้าที่ - เทศบาลอัจฉริยะ</title>
+
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Leaflet CSS (Map) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    /* สไตล์เฉพาะส่วน Dashboard */
+    .dashboard-layout {
+      display: none;
+      /* ซ่อนไว้รอจนกว่าจะเข้าสู่ระบบ */
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .dashboard-header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-logo h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .user-email {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* สถิติสรุปภาพรวม */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      padding: 16px 24px;
+      background: #f1f5f9;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .stat-card {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .stat-icon {
+      font-size: 24px;
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .stat-info h3 {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .stat-info p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* โครงสร้างพื้นที่เนื้อหา */
+    .main-content {
+      display: flex;
+      flex-grow: 1;
+      min-height: 0;
+      position: relative;
+    }
+
+    .map-section {
+      flex-grow: 1;
+      height: 100%;
+      position: relative;
+    }
+
+    .control-panel {
+      width: 420px;
+      height: 100%;
+      border-left: 1px solid var(--glass-border);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-secondary);
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* สไตล์สำหรับเมนูลอยและ Sidebar ซ้าย */
+    .dock-btn {
+      border: none;
+      background: none;
+      font-family: var(--font-family);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+    .dock-btn:hover {
+      background: rgba(15, 23, 42, 0.05);
+      transform: translateY(-1px);
+    }
+    
+    #leftDrawer {
+      box-shadow: 10px 0 25px -5px rgba(15, 23, 42, 0.05);
+    }
+
+    /* แท็บควบคุม */
+    .tab-header {
+      display: flex;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 14px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-family);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      text-align: center;
+    }
+
+    .tab-btn.active {
+      color: var(--accent-cyan);
+      border-bottom: 2px solid var(--accent-cyan);
+      background: rgba(15, 23, 42, 0.02);
+    }
+
+    .tab-content {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* รายการการแจ้งซ่อม */
+    .report-card {
+      background: #f8fafc;
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: var(--transition-fast);
+    }
+
+    .report-card:hover {
+      border-color: rgba(15, 23, 42, 0.15);
+      background: #f1f5f9;
+    }
+
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .report-time {
+      color: var(--text-muted);
+    }
+
+    /* หน้าล็อกอิน */
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 420px;
+      padding: 32px;
+    }
+
+    /* หน้าต่างโมดัล (Modal) สำหรับ QR Code และเพิ่มเสาไฟ */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      width: 100%;
+      max-width: 400px;
+      padding: 24px;
+      text-align: center;
+      position: relative;
+    }
+
+    .qr-container {
+      background: white;
+      padding: 16px;
+      border-radius: 12px;
+      display: inline-block;
+      margin: 16px 0;
+    }
+
+    /* สำหรับหน้าพิมพ์สติกเกอร์ QR */
+    #bulkPrintArea {
+      display: none;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+      }
+      
+      #loginSection, #dashboardSection, .modal-backdrop, .demo-banner, .swal2-container {
+        display: none !important;
+        visibility: hidden !important;
+      }
+
+      #bulkPrintArea,
+      #bulkPrintArea * {
+        visibility: visible !important;
+      }
+
+      #bulkPrintArea {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 20px !important;
+        padding: 10px !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+      }
+
+      .print-sticker-card {
+        border: 2px dashed #000000 !important;
+        border-radius: 12px !important;
+        padding: 15px !important;
+        text-align: center !important;
+        background: #ffffff !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        height: 280px !important;
+      }
+    }
+
+    /* ป้ายแบนเนอร์แจ้งเตือนโหมด Demo */
+    .demo-banner {
+      background: linear-gradient(90deg, #f59e0b, #d97706);
+      color: #000;
+      font-weight: 700;
+      font-size: 12px;
+      text-align: center;
+      padding: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      display: none;
+    }
+
+    @media (max-width: 1024px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .main-content {
+        flex-direction: column;
+        height: auto;
+      }
+
+      .map-section {
+        height: 400px;
+      }
+
+      .control-panel {
+        width: 100%;
+        height: 600px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- หน้าโหลดดิง -->
+  <div class="loader-container" id="loader">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- แบนเนอร์จำลองสถานะเดโม -->
+  <div class="demo-banner" id="demoBanner">
+    <i class="fa-solid fa-triangle-exclamation"></i> โหมดเดโม: ใช้งานบัญชีใดก็ได้เพื่อเข้าสู่ระบบ
+    ข้อมูลจะถูกบันทึกในหน่วยความจำของเบราว์เซอร์
+  </div>
+
+  <!-- 1. ส่วนหน้าล็อกอิน (Login Panel) -->
+  <div class="login-container" id="loginSection">
+    <div class="login-box glass-panel">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <img src="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png" alt="โลโก้เทศบาล" style="height: 70px; width: auto; object-fit: contain; margin-bottom: 12px;">
+        <h2 style="color: var(--text-main);">เข้าสู่ระบบเจ้าหน้าที่</h2>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">ระบบแผนที่และจัดการหลอดไฟอัจฉริยะ</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="loginUsername">ชื่อผู้ใช้งาน (Username)</label>
+          <input type="text" class="form-input" id="loginUsername" placeholder="ระบุชื่อผู้ใช้งาน (เช่น admin)"
+            required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">รหัสผ่าน</label>
+          <input type="password" class="form-input" id="loginPassword" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> เข้าสู่ระบบ
+        </button>
+      </form>
+
+      <div style="margin-top: 20px; text-align: center;">
+        <a href="index.html" style="font-size: 13px; color: var(--accent-cyan); text-decoration: none;">
+          <i class="fa-solid fa-chevron-left"></i> กลับไปยังหน้าประชาชน
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. ส่วนแผงควบคุมหลัก (Dashboard Layout) -->
+  <div class="dashboard-layout" id="dashboardSection">
+
+    <!-- เมนูบาร์หลัก -->
+    <header class="dashboard-header">
+      <div class="header-logo" style="display: flex; align-items: center; gap: 10px;">
+        <img src="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png" alt="โลโก้เทศบาล" style="height: 36px; width: auto; object-fit: contain;">
+        <h2>ระบบจัดการไฟฟ้า เทศบาลตำบลตันหยงมัส</h2>
+      </div>
+      <div class="user-profile">
+        <span class="user-email" id="staffEmail">staff@municipality.go.th</span>
+        <button class="btn btn-secondary" onclick="logout()" style="padding: 6px 12px; font-size: 12px;">
+          <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+        </button>
+      </div>
+    </header>
+
+    <!-- บล็อกแสดงข้อมูลสถิติรวม -->
+    <section class="stats-grid">
+      <div class="stat-card glass-panel">
+        <i class="fa-solid fa-lightbulb stat-icon"
+          style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);"></i>
+        <div class="stat-info">
+          <h3 id="statTotal">0</h3>
+          <p>หลอดไฟทั้งหมด</p>
+        </div>
+      </div>
+      <div class="stat-card glass-panel">
+        <i class="fa-solid fa-circle-check stat-icon"
+          style="background: rgba(16, 185, 129, 0.1); color: var(--color-success);"></i>
+        <div class="stat-info">
+          <h3 id="statWorking">0</h3>
+          <p>ใช้งานได้ปกติ</p>
+        </div>
+      </div>
+      <div class="stat-card glass-panel">
+        <i class="fa-solid fa-circle-exclamation stat-icon"
+          style="background: rgba(239, 68, 68, 0.1); color: var(--color-danger);"></i>
+        <div class="stat-info">
+          <h3 id="statBroken">0</h3>
+          <p>ชำรุด/ไฟดับ</p>
+        </div>
+      </div>
+      <div class="stat-card glass-panel">
+        <i class="fa-solid fa-screwdriver-wrench stat-icon"
+          style="background: rgba(245, 158, 11, 0.1); color: var(--color-warning);"></i>
+        <div class="stat-info">
+          <h3 id="statPending">0</h3>
+          <p>กำลังรอดำเนินการ</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- พื้นที่เนื้อหาแผนที่และแผงควบคุมขวา -->
+    <div class="main-content">
+
+      <!-- แผง Sidebar ด้านซ้ายสำหรับแสดงเมนูดึงลอย -->
+      <div id="leftDrawer" style="position: absolute; left: 0; top: 0; height: 100%; width: 420px; background: var(--bg-secondary); border-right: 1px solid var(--border-light); z-index: 1002; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column;">
+        <!-- Header ของ Drawer -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-light);">
+          <h4 id="drawerTitle" style="font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+            <!-- หัวข้อจะเปลี่ยนไปตามปุ่มที่คลิก -->
+          </h4>
+          <button class="btn btn-secondary" onclick="closeDrawer()" style="padding: 4px 8px; font-size: 12px; border-radius: 6px;">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        
+        <!-- Content ของ Drawer -->
+        <div style="flex-grow: 1; overflow-y: auto; padding: 20px;">
+          
+          <!-- 1. ส่วนสถิติรายเดือน -->
+          <div id="drawerStatsPanel" style="display: none;">
+            <h4 style="font-size: 15px; margin-bottom: 12px; color: var(--text-main);"><i class="fa-solid fa-chart-pie"></i> รายงานสถิติประจำเดือน</h4>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+              กรองเลือกเดือนและปีเพื่อดูสรุปปัญหารายเดือนและการดำเนินงานของเจ้าหน้าที่
+            </p>
+
+            <div class="glass-panel" style="padding: 16px; margin-bottom: 16px; border: 1px solid var(--border-light); background: #ffffff;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                <div>
+                  <label class="form-label" for="filterMonth">เดือน</label>
+                  <select class="form-select" id="filterMonth" onchange="updateMonthlyStats()">
+                    <option value="0">มกราคม</option>
+                    <option value="1">กุมภาพันธ์</option>
+                    <option value="2">มีนาคม</option>
+                    <option value="3">เมษายน</option>
+                    <option value="4">พฤษภาคม</option>
+                    <option value="5">มิถุนายน</option>
+                    <option value="6">กรกฎาคม</option>
+                    <option value="7">สิงหาคม</option>
+                    <option value="8">กันยายน</option>
+                    <option value="9">ตุลาคม</option>
+                    <option value="10">พฤศจิกายน</option>
+                    <option value="11">ธันวาคม</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="form-label" for="filterYear">ปี (ค.ศ.)</label>
+                  <select class="form-select" id="filterYear" onchange="updateMonthlyStats()">
+                    <option value="2025">2025</option>
+                    <option value="2026" selected>2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center; margin-top: 10px;">
+                <div style="background: #fee2e2; padding: 12px; border-radius: 8px; border: 1px solid #fca5a5;">
+                  <span style="font-size: 12px; color: #b91c1c; font-weight: 600;">แจ้งเสียทั้งหมด</span>
+                  <h3 id="monthlyTotalCount" style="font-size: 22px; color: #dc2626; margin-top: 4px;">0</h3>
+                </div>
+                <div style="background: #d1fae5; padding: 12px; border-radius: 8px; border: 1px solid #6ee7b7;">
+                  <span style="font-size: 12px; color: #15803d; font-weight: 600;">แก้ไขสำเร็จ</span>
+                  <h3 id="monthlyResolvedCount" style="font-size: 22px; color: #16a34a; margin-top: 4px;">0</h3>
+                </div>
+              </div>
+
+              <button class="btn btn-primary" onclick="showMonthlyReportsDetail()" style="width: 100%; margin-top: 14px; font-size: 13px;">
+                <i class="fa-solid fa-list-ul"></i> ดูรายละเอียดการดำเนินงาน
+              </button>
+            </div>
+          </div>
+          
+          <!-- 2. ส่วนจัดการพิมพ์เสาไฟ -->
+          <div id="drawerManagePanel" style="display: none;">
+            <h4 style="font-size: 15px; margin-bottom: 8px; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-print" style="color: var(--accent-blue)"></i>
+              <span>คิวพิมพ์สติกเกอร์ QR Code</span>
+              <span id="printQueueBadge" style="background: var(--accent-cyan); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 10px;">0</span>
+            </h4>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+              สามารถกดเพิ่มเสาไฟต่าง ๆ เข้าคิวเพื่อพิมพ์ลงบนกระดาษ A4 พร้อมกันหลายดวงได้
+            </p>
+
+            <div id="printQueueList" style="max-height: 250px; overflow-y: auto; background: #f8fafc; border: 1px solid var(--border-light); border-radius: 10px; padding: 10px; margin-bottom: 12px; font-size: 12px; display: none;">
+              <!-- รายการในคิวจะแสดงที่นี่ -->
+            </div>
+            
+            <div id="printQueueEmptyText" style="text-align: center; padding: 24px 0; color: var(--text-muted); font-size: 12px; border: 1px dashed var(--border-light); border-radius: 10px; margin-bottom: 12px;">
+              ไม่มีรายการในคิวพิมพ์
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+              <button class="btn btn-primary" onclick="printBulkQr()" style="flex: 2; font-size: 13px;" id="btnPrintBulk" disabled>
+                <i class="fa-solid fa-print"></i> พิมพ์คิวทั้งหมด (A4)
+              </button>
+              <button class="btn btn-secondary" onclick="clearPrintQueue()" style="flex: 1; font-size: 13px; color: var(--color-danger); border-color: #fca5a5;" id="btnClearBulk" disabled>
+                ล้างคิว
+              </button>
+            </div>
+          </div>
+          
+          <!-- 3. ส่วนเพิ่มเสาไฟใหม่ / แก้ไข -->
+          <div id="drawerAddPanel" style="display: none;">
+            <h4 style="font-size: 15px; margin-bottom: 12px; color: var(--text-main);"><span id="formActionTitle">เพิ่มเสาไฟใหม่</span></h4>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+              * สามารถระบุพิกัดโดยการคลิกตำแหน่งบนแผนที่โดยตรง หรือกรอกพิกัดด้วยตัวเองด้านล่าง
+            </p>
+
+            <form id="poleForm">
+              <input type="hidden" id="editPoleId">
+
+              <div class="form-group">
+                <label class="form-label" for="poleCode">รหัสเสาไฟ (เช่น L-105) <span style="color:var(--color-danger)">*</span></label>
+                <input type="text" class="form-input" id="poleCode" placeholder="ระบุรหัสประจำต้น" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="poleName">ชื่อเรียก/รายละเอียดตำแหน่งเสาไฟ <span style="color:var(--color-danger)">*</span></label>
+                <input type="text" class="form-input" id="poleName" placeholder="เช่น สามแยกตรงข้ามเซเว่น..." required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="poleZone">เขต/โซนการดูแล</label>
+                <select class="form-select" id="poleZone">
+                  <option value="เขต 1">เขต 1</option>
+                  <option value="เขต 2">เขต 2</option>
+                  <option value="เขต 3">เขต 3</option>
+                  <option value="เขต 4">เขต 4</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                  <label class="form-label" for="poleLat">ละติจูด (Lat) <span style="color:var(--color-danger)">*</span></label>
+                  <input type="number" step="any" class="form-input" id="poleLat" placeholder="6.29445" required>
+                </div>
+                <div>
+                  <label class="form-label" for="poleLng">ลองจิจูด (Lng) <span style="color:var(--color-danger)">*</span></label>
+                  <input type="number" step="any" class="form-input" id="poleLng" placeholder="101.72362" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="poleStatus">สถานะการทำงาน</label>
+                <select class="form-select" id="poleStatus">
+                  <option value="working" style="color: var(--color-success)">ใช้งานปกติ</option>
+                  <option value="broken" style="color: var(--color-danger)">ไฟดับ/ชำรุด</option>
+                  <option value="pending" style="color: var(--color-warning)">กำลังรอดำเนินการซ่อม</option>
+                </select>
+              </div>
+
+              <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;" id="saveBtn">
+                  <i class="fa-solid fa-save"></i> บันทึกข้อมูล
+                </button>
+                <button type="button" class="btn btn-secondary" style="flex: 1;" id="resetBtn" onclick="closeDrawer()">
+                  ยกเลิก
+                </button>
+              </div>
+            </form>
+          </div>
+          
+        </div>
+      </div>
+
+      <!-- ส่วนแสดงแผนที่อัจฉริยะ -->
+      <div class="map-section">
+        <div
+          style="position: absolute; top: 16px; left: 16px; z-index: 1001; background: rgba(255, 255, 255, 0.95); color: var(--text-main); padding: 10px 14px; border-radius: 10px; font-size: 12px; border: 1px solid var(--border-light); box-shadow: 0 4px 12px rgba(0,0,0,0.08); pointer-events: none; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-circle-info" style="color:var(--accent-cyan); font-size: 14px;"></i>
+          <span><strong>คำแนะนำ:</strong> กดปุ่ม <strong>เพิ่มเสาไฟใหม่</strong> ด้านล่างก่อน จากนั้นคลิกบนแผนที่เพื่อระบุพิกัดเสาไฟ</span>
+        </div>
+        
+        <!-- แผงรายงานแจ้งเสียจะแสดงอยู่ตลอดเวลาทางด้านขวา -->
+
+        <!-- แผงเมนูลอยกลางหน้าจอ -->
+        <div id="floatingMenuDock" style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 1001; display: flex; gap: 12px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid var(--border-light); border-radius: 9999px; padding: 8px 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);">
+          <button class="dock-btn" onclick="openDrawer('stats')">
+            <i class="fa-solid fa-chart-line" style="color: var(--accent-cyan); font-size: 15px;"></i>
+            <span>สถิติรายเดือน</span>
+          </button>
+          <div style="width: 1px; background: var(--border-light); margin: 6px 0;"></div>
+          <button class="dock-btn" onclick="openDrawer('manage')">
+            <i class="fa-solid fa-print" style="color: var(--accent-blue); font-size: 15px;"></i>
+            <span>คิวพิมพ์สติกเกอร์</span>
+          </button>
+          <div style="width: 1px; background: var(--border-light); margin: 6px 0;"></div>
+          <button class="dock-btn" onclick="openDrawer('add')">
+            <i class="fa-solid fa-circle-plus" style="color: var(--color-success); font-size: 15px;"></i>
+            <span>เพิ่มเสาไฟใหม่</span>
+          </button>
+        </div>
+
+        <div id="map"></div>
+      </div>
+
+      <!-- แผงควบคุมด้านขวา (แสดงรายการแจ้งเสียเท่านั้น) -->
+      <div class="control-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; border-bottom: 1px solid var(--border-light); background: var(--bg-secondary);">
+          <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-list-check" style="color: var(--color-danger)"></i>
+            <span>รายการแจ้งเสีย</span>
+            <span id="reportCountBadge" style="background: var(--color-danger); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 10px;">0</span>
+          </h4>
+        </div>
+        <div class="tab-content" style="flex-grow: 1; overflow-y: auto; padding: 20px; width: 100%;">
+          <div id="reportsList">
+            <p style="color: var(--text-muted); text-align: center; margin-top: 30px;">ไม่มีข้อมูลรายการแจ้งเสีย</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 3. หน้าต่างโมดัลสร้าง QR Code (QR Generator Modal) -->
+  <div class="modal-backdrop" id="qrModal">
+    <div class="modal-content glass-panel" style="max-width: 440px; padding: 24px;">
+      <button class="btn btn-secondary" onclick="closeQrModal()"
+        style="position: absolute; right: 16px; top: 16px; padding: 4px 8px; font-size: 12px; z-index: 10;">X</button>
+
+      <!-- ส่วนแสดงตัวอย่างและสั่งพิมพ์ตัวสติกเกอร์เดี่ยว -->
+      <div id="singleStickerContainer" class="glass-panel" style="padding: 20px; background: white; border: 1px solid var(--border-light); border-radius: 12px; margin-top: 15px;">
+        <div id="printArea" style="text-align: center; font-family: var(--font-family); color: #000; background: #fff; padding: 10px;">
+          <!-- ส่วนหัวของสติกเกอร์ (โลโก้ + ชื่อเทศบาล) -->
+          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 12px;">
+            <img src="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png" alt="โลโก้เทศบาล" style="height: 38px; width: auto; object-fit: contain;">
+            <div style="text-align: left;">
+              <h4 style="font-size: 13px; font-weight: 800; margin: 0; color: #0f172a;">เทศบาลตำบลตันหยงมัส</h4>
+              <p style="font-size: 9px; font-weight: 600; margin: 0; color: #475569;">ระบบแจ้งซ่อมไฟฟ้าสาธารณะอัจฉริยะ</p>
+            </div>
+          </div>
+          
+          <p style="font-size: 10px; font-weight: bold; margin-bottom: 8px; color: #dc2626; text-transform: uppercase; letter-spacing: 0.5px;">
+            <i class="fa-solid fa-circle-exclamation"></i> พบไฟดับ/ชำรุด สแกนแจ้งซ่อมที่นี่
+          </p>
+
+          <!-- คิวอาร์โค้ด -->
+          <div class="qr-container" style="background: white; padding: 10px; border-radius: 8px; display: inline-block; border: 1px solid #e2e8f0; margin: 5px 0;">
+            <div id="qrcode"></div>
+          </div>
+
+          <!-- รหัสเสาไฟและสถานที่ -->
+          <div style="margin-top: 8px;">
+            <h2 style="font-weight: 800; font-size: 18px; color: #0f172a; background: #f1f5f9; display: inline-block; padding: 4px 16px; border-radius: 8px; margin-bottom: 6px; border: 2px dashed #0f172a;" id="qrPoleCode">L-XXX</h2>
+             <div style="font-size: 11px; font-weight: 600; color: #0f172a; line-height: 1.3;" id="qrPoleName">หน้าสำนักงานเทศบาล</div>
+            <div style="font-size: 9px; color: #64748b; margin-top: 2px;" id="qrPoleZone">เขตการดูแล: เขต 1</div>
+            <div style="font-size: 10px; color: #06c755; font-weight: 700; margin-top: 2px;"><i class="fa-brands fa-line"></i> แอดไลน์สถานะ: @741cbbgl</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-primary" onclick="downloadQrCode()" style="flex: 1; font-size: 13px;">
+            <i class="fa-solid fa-download"></i> ดาวน์โหลดภาพ
+          </button>
+          <button class="btn btn-secondary" onclick="printQrSticker()" style="flex: 1; font-size: 13px;">
+            <i class="fa-solid fa-print"></i> พิมพ์ใบนี้
+          </button>
+        </div>
+        <button class="btn" id="modalQueueBtn" onclick="toggleQueueFromModal()" style="width: 100%; font-size: 13px; font-weight: 600;">
+          <i class="fa-solid fa-plus"></i> เพิ่มเข้าคิวพิมพ์พร้อมกัน
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- พื้นที่ซ่อนสำหรับการพิมพ์ A4 Grid -->
+  <div id="bulkPrintArea"></div>
+
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
+  <!-- SweetAlert2 (Modern Popups) -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- QRCode.js Library (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <script>
+    // ==========================================
+    // 1. ตั้งค่า Firebase Configuration
+    // ==========================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFapFJVU-g5TyBi4ItudHOeqS4Mc3W_fc",
+      authDomain: "tm-municipal-smartlight.firebaseapp.com",
+      projectId: "tm-municipal-smartlight",
+      storageBucket: "tm-municipal-smartlight.firebasestorage.app",
+      messagingSenderId: "1056211682644",
+      appId: "1:1056211682644:web:7e26d60bd8e55e2e5974c1",
+      measurementId: "G-9N8K32KDPM"
+    };
+
+    let db, auth;
+    let isDemoMode = false;
+    let map;
+    let markersGroup;
+    let allLights = [];
+    let allReports = [];
+    let qrcodeObj = null;
+    let activeMarkerLocation = null;
+    let printQueue = JSON.parse(localStorage.getItem('smart_print_queue')) || [];
+    let activeModalLightId = null;
+    let isAddingPoleMode = false;
+
+    // ==========================================
+    // 2. การเริ่มต้นระบบและการตรวจสอบเข้าสู่ระบบ
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', () => {
+      // ซ่อนหน้าจอโหลดดิง
+      setTimeout(() => {
+        document.getElementById('loader').style.opacity = 0;
+        setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+      }, 600);
+
+      // ตั้งค่าเดือน/ปีปัจจุบันล่วงหน้าในตัวเลือกรายงาน
+      const currentDate = new Date();
+      const monthSelect = document.getElementById('filterMonth');
+      const yearSelect = document.getElementById('filterYear');
+      if (monthSelect && yearSelect) {
+        monthSelect.value = currentDate.getMonth();
+        const curYearStr = currentDate.getFullYear().toString();
+        let hasYear = false;
+        for (let i = 0; i < yearSelect.options.length; i++) {
+          if (yearSelect.options[i].value === curYearStr) {
+            hasYear = true;
+            break;
+          }
+        }
+        if (!hasYear) {
+          const opt = document.createElement('option');
+          opt.value = curYearStr;
+          opt.text = curYearStr;
+          yearSelect.add(opt);
+        }
+        yearSelect.value = curYearStr;
+      }
+
+      initFirebase();
+      initMap();
+    });
+
+    function initFirebase() {
+      if (firebaseConfig.apiKey === "YOUR_API_KEY" || !firebaseConfig.apiKey) {
+        console.warn("Firebase not configured. Entering Demo Mode.");
+        isDemoMode = true;
+        document.getElementById('demoBanner').style.display = 'block';
+
+        // จำลองเข้าสู่ระบบสำหรับเดโม
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const username = document.getElementById('loginUsername').value;
+          loginSuccess({ email: username });
+        });
+      } else {
+        try {
+          firebase.initializeApp(firebaseConfig);
+          db = firebase.firestore();
+          auth = firebase.auth();
+
+          // ระบบเฝ้าสังเกตสถานะการล็อกอิน Firebase Auth
+          auth.onAuthStateChanged((user) => {
+            if (user) {
+              loginSuccess(user);
+            } else {
+              logoutSuccess();
+            }
+          });
+
+          document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            // แปลงชื่อผู้ใช้งาน (Username) เป็นรูปแบบ Email เสมือนสำหรับ Firebase Auth
+            let email = username;
+            if (!username.includes('@')) {
+              email = `${username}@smartlight.local`;
+            }
+
+            auth.signInWithEmailAndPassword(email, password)
+              .catch(err => {
+                console.error("Login Error: ", err);
+                Swal.fire({
+                  title: 'เข้าสู่ระบบล้มเหลว!',
+                  text: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง',
+                  icon: 'error',
+                  confirmButtonText: 'ตกลง',
+                  background: '#161c2d',
+                  color: '#f3f4f6',
+                  confirmButtonColor: '#ef4444'
+                });
+              });
+          });
+        } catch (e) {
+          console.error("Firebase init failed", e);
+          isDemoMode = true;
+          document.getElementById('demoBanner').style.display = 'block';
+        }
+      }
+    }
+
+    function loginSuccess(user) {
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('dashboardSection').style.display = 'flex';
+
+      // แสดงชื่อผู้ใช้ (ตัดส่วนโดเมนอีเมลออกถ้าหากเป็นอีเมลระบบ)
+      let displayName = user.email || 'Admin';
+      if (displayName.endsWith('@smartlight.local')) {
+        displayName = displayName.split('@')[0];
+      }
+      document.getElementById('staffEmail').innerText = displayName;
+
+      // เรียกโหลดข้อมูลทั้งหมด
+      loadData();
+
+      // รีเฟรชแผนที่เพื่อให้ Leaflet ปรับขนาดอย่างถูกต้องหลังจาก Layout เปลี่ยน
+      setTimeout(() => map.invalidateSize(), 300);
+    }
+
+    function logout() {
+      if (isDemoMode) {
+        logoutSuccess();
+      } else {
+        auth.signOut().then(() => logoutSuccess());
+      }
+    }
+
+    function logoutSuccess() {
+      document.getElementById('dashboardSection').style.display = 'none';
+      document.getElementById('loginSection').style.display = 'flex';
+      document.getElementById('loginForm').reset();
+    }
+
+    // ==========================================
+    // 3. ระบบแผนที่ของแผงควบคุม
+    // ==========================================
+    function initMap() {
+      const defaultLatLng = [6.29445, 101.72362];
+      map = L.map('map', { zoomControl: false }).setView(defaultLatLng, 15);
+      L.control.zoom({ position: 'topright' }).addTo(map);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+      }).addTo(map);
+
+      markersGroup = L.layerGroup().addTo(map);
+
+      map.on('click', (e) => {
+        if (!isAddingPoleMode) return;
+
+        const editPoleId = document.getElementById('editPoleId').value;
+        if (editPoleId) {
+          const light = allLights.find(l => l.id === editPoleId);
+          const code = light ? light.code : '';
+          document.getElementById('formActionTitle').innerText = `แก้ไขเสาไฟรหัส: ${code} (เลือกพิกัดใหม่แล้ว)`;
+        } else {
+          document.getElementById('formActionTitle').innerText = "เพิ่มเสาไฟใหม่ (คลิกบนแผนที่แล้ว)";
+        }
+        document.getElementById('poleLat').value = e.latlng.lat.toFixed(6);
+        document.getElementById('poleLng').value = e.latlng.lng.toFixed(6);
+
+        // จุดปักหมุดสีฟ้าอ่อนชั่วคราวบอกพิกัดที่คลิก
+        if (activeMarkerLocation) {
+          map.removeLayer(activeMarkerLocation);
+        }
+        activeMarkerLocation = L.marker(e.latlng, {
+          icon: L.divIcon({
+            className: 'temp-marker',
+            html: '<i class="fa-solid fa-location-crosshairs" style="color:var(--accent-cyan); font-size:24px;"></i>',
+            iconAnchor: [12, 12]
+          })
+        }).addTo(map);
+      });
+    }
+
+    // ==========================================
+    // 4. การจัดการโหลดข้อมูล (สถิติ, รายการ)
+    // ==========================================
+    function loadData() {
+      if (isDemoMode) {
+        // โหลดจาก Local Storage
+        allLights = JSON.parse(localStorage.getItem('smart_lights')) || [];
+        allReports = JSON.parse(localStorage.getItem('smart_reports')) || [];
+        updateUI();
+      } else {
+        // โหลดเสาไฟ Firestore (เรียลไทม์)
+        db.collection('lights').onSnapshot((snapshot) => {
+          allLights = [];
+          snapshot.forEach((doc) => {
+            allLights.push({ id: doc.id, ...doc.data() });
+          });
+          updateUI();
+        });
+
+        // โหลดรายการแจ้งเสีย Firestore (เรียลไทม์)
+        db.collection('reports').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
+          allReports = [];
+          snapshot.forEach((doc) => {
+            allReports.push({ id: doc.id, ...doc.data() });
+          });
+          updateUI();
+        });
+      }
+    }
+
+    function updateUI() {
+      updateStats();
+      displayLightsOnMap();
+      displayReports();
+      updateMonthlyStats();
+      updatePrintQueueUI();
+    }
+
+    // อัปเดตการ์ดตัวเลขสรุป
+    function updateStats() {
+      const total = allLights.length;
+      const working = allLights.filter(l => l.status === 'working').length;
+      const broken = allLights.filter(l => l.status === 'broken').length;
+      const pending = allLights.filter(l => l.status === 'pending').length;
+
+      document.getElementById('statTotal').innerText = total;
+      document.getElementById('statWorking').innerText = working;
+      document.getElementById('statBroken').innerText = broken;
+      document.getElementById('statPending').innerText = pending;
+    }
+
+    // ==========================================
+    // 5. ปักหมุดหลอดไฟบนแผนที่พร้อมระบบจัดการในตัว
+    // ==========================================
+    function displayLightsOnMap() {
+      markersGroup.clearLayers();
+      const bounds = [];
+
+      allLights.forEach(light => {
+        const marker = L.marker([light.lat, light.lng], { icon: getMarkerIcon(light.status) });
+
+        const statusText = light.status === 'working' ? 'ใช้งานปกติ' : light.status === 'pending' ? 'กำลังซ่อมแซม' : 'ไฟดับ/ชำรุด';
+        const badgeClass = light.status === 'working' ? 'badge-working' : light.status === 'pending' ? 'badge-pending' : 'badge-broken';
+
+        const isInQueue = printQueue.includes(light.id);
+        const queueBtnText = isInQueue ? 'นำออกจากคิวพิมพ์' : 'เพิ่มเข้าคิวพิมพ์';
+        const queueBtnIcon = isInQueue ? 'fa-solid fa-minus' : 'fa-solid fa-plus';
+        const queueBtnStyle = isInQueue ? 'background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;' : 'background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;';
+
+        const popupContent = `
+          <div style="min-width: 250px; font-family: var(--font-family);">
+            <!-- หัวข้อหลักและรหัส -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; margin-bottom: 8px;">
+              <span style="font-weight: 700; font-size: 15px; color: var(--text-main);"><i class="fa-solid fa-lightbulb" style="color: var(--accent-cyan)"></i> รหัส: ${light.code}</span>
+              <span class="badge ${badgeClass}" style="padding: 2px 8px; font-size: 11px;">${statusText}</span>
+            </div>
+            
+            <!-- รายละเอียดพิกัดและสถานที่ -->
+            <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;">
+              <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--text-main);">
+                <i class="fa-solid fa-location-dot" style="color: var(--text-muted); margin-top: 3px; font-size: 13px; width: 14px;"></i>
+                <div style="flex: 1; font-weight: 500;">${light.name}</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted);">
+                <i class="fa-solid fa-border-all" style="width: 14px;"></i>
+                <div>เขตดูแล: <span style="font-weight: 600; color: var(--text-main);">${light.zone || 'ไม่ระบุ'}</span></div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted);">
+                <i class="fa-solid fa-earth-asia" style="width: 14px;"></i>
+                <div>พิกัด: <span style="font-family: monospace;">${light.lat.toFixed(5)}, ${light.lng.toFixed(5)}</span></div>
+              </div>
+            </div>
+
+            <!-- ปุ่มดำเนินการ -->
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-primary" onclick="openQrModal('${light.id}')" style="padding: 6px 10px; font-size: 12px; flex: 1;">
+                  <i class="fa-solid fa-qrcode"></i> แสดง QR
+                </button>
+                <button class="btn" onclick="toggleQueueFromMap('${light.id}')" style="padding: 6px 10px; font-size: 12px; flex: 1.2; font-weight: 600; transition: var(--transition-fast); ${queueBtnStyle}">
+                  <i class="${queueBtnIcon}"></i> ${queueBtnText}
+                </button>
+              </div>
+              <div style="display: flex; gap: 6px; border-top: 1px solid var(--border-light); padding-top: 6px;">
+                <button class="btn btn-secondary" onclick="editPole('${light.id}')" style="padding: 5px; font-size: 11px; flex: 1;">
+                  <i class="fa-solid fa-pen-to-square"></i> แก้ไข
+                </button>
+                <button class="btn" onclick="deletePole('${light.id}')" style="padding: 5px; font-size: 11px; flex: 1; background: #fee2e2; border: 1px solid #fca5a5; color: #dc2626;">
+                  <i class="fa-solid fa-trash"></i> ลบเสาไฟ
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        markersGroup.addLayer(marker);
+        bounds.push([light.lat, light.lng]);
+      });
+
+      // ปรับแผนที่ให้พอดีกับเสาไฟ
+      if (bounds.length > 0 && allLights.length > 0) {
+        // เพื่อป้องกันไม่ให้เลื่อนแผนที่รบกวนผู้ใช้งานขณะแก้ไข ให้ทำเฉพาะเมื่อดึงข้อมูลเสร็จครั้งแรก
+        if (!map._hasFitBounds) {
+          map.fitBounds(bounds, { padding: [50, 50] });
+          map._hasFitBounds = true;
+        }
+      }
+    }
+
+    function getMarkerIcon(status) {
+      let iconMarkup = '<i class="fa-solid fa-lightbulb" style="color:var(--color-success); font-size:16px;"></i>';
+      if (status === 'broken') {
+        iconMarkup = '<i class="fa-solid fa-lightbulb" style="color:var(--color-danger); font-size:16px; animation: pulse 1s infinite alternate;"></i>';
+      } else if (status === 'pending') {
+        iconMarkup = '<i class="fa-solid fa-screwdriver-wrench" style="color:var(--color-warning); font-size:14px;"></i>';
+      }
+      return L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background: #ffffff; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid ${status === 'broken' ? 'var(--color-danger)' : status === 'pending' ? 'var(--color-warning)' : 'var(--color-success)'}; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05)">${iconMarkup}</div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      });
+    }
+
+    // ==========================================
+    // 6. การจัดการและแสดงผลรายการแจ้งเสีย (Reports)
+    // ==========================================
+    function displayReports() {
+      const container = document.getElementById('reportsList');
+      document.getElementById('reportCountBadge').innerText = allReports.filter(r => r.status !== 'resolved').length;
+
+      if (allReports.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-muted); text-align: center; margin-top: 30px;">ไม่มีข้อมูลรายการแจ้งเสีย</p>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      allReports.forEach(report => {
+        const timeFormatted = formatTime(report.timestamp);
+        const cardStatusClass = report.status === 'resolved' ? 'badge-working' : report.status === 'in_progress' ? 'badge-pending' : 'badge-broken';
+        const cardStatusText = report.status === 'resolved' ? 'ซ่อมเสร็จสิ้น' : report.status === 'in_progress' ? 'กำลังซ่อม' : 'รอดำเนินการ';
+
+        // ปัญหากดข้ามไปยังตำแหน่งเสาไฟบนแผนที่
+        const cardHtml = `
+          <div class="report-card">
+            <div class="report-header">
+              <span class="report-time"><i class="fa-solid fa-clock"></i> ${timeFormatted}</span>
+              <span class="badge ${cardStatusClass}">${cardStatusText}</span>
+            </div>
+            <div style="font-weight:600; color: var(--text-main); font-size:14px;">
+              เสาไฟ: ${report.lightCode} <span style="font-weight:normal; font-size:12px; color:var(--text-muted)">(${report.lightName})</span>
+            </div>
+            ${report.reporterName ? `<div style="font-size:12px; color:var(--text-main); font-weight: 600; margin-top: 2px;"><i class="fa-brands fa-line" style="color: #06c755; font-size: 14px;"></i> ผู้แจ้ง: ${report.reporterName} ${report.lineUserId ? `<span style="font-weight: normal; font-size: 11px; color: var(--text-muted);">(${report.lineUserId})</span>` : ''}</div>` : ''}
+            <div style="font-size:13px; color: var(--text-muted);">
+              <strong>อาการ:</strong> ${report.issueType}
+              ${report.details ? `<br><span style="color: var(--text-muted); font-size:12px;">รายละเอียด: ${report.details}</span>` : ''}
+            </div>
+            ${report.reporterPhone ? `<div style="font-size:12px; color:var(--accent-cyan);"><i class="fa-solid fa-phone"></i> เบอร์ติดต่อ: ${report.reporterPhone}</div>` : ''}
+            ${report.resolvedImageUrl ? `
+              <div style="margin-top: 8px;">
+                <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">รูปภาพเสร็จงาน:</span>
+                <img src="${report.resolvedImageUrl}" alt="รูปผลงานซ่อม" style="width: 100%; max-height: 150px; object-fit: cover; border-radius: 8px; margin-top: 4px; border: 1px solid var(--border-light);">
+              </div>
+            ` : ''}
+            
+            <div style="display:flex; gap:6px; margin-top:8px;">
+              <button class="btn btn-secondary" onclick="locateLight('${report.lightId}')" style="padding:4px 8px; font-size:11px; flex:1;">
+                <i class="fa-solid fa-magnifying-glass-location"></i> ชี้บนแผนที่
+              </button>
+              ${report.status === 'pending' ? `
+                <button class="btn btn-primary" onclick="updateReportStatus('${report.id}', '${report.lightId}', 'in_progress')" style="padding:4px 8px; font-size:11px; flex:1;">
+                  <i class="fa-solid fa-person-digging"></i> รับเรื่องซ่อม
+                </button>
+              ` : ''}
+              ${report.status === 'in_progress' ? `
+                <button class="btn btn-primary" onclick="updateReportStatus('${report.id}', '${report.lightId}', 'resolved')" style="padding:4px 8px; font-size:11px; flex:1; background:var(--color-success);">
+                  <i class="fa-solid fa-check"></i> ซ่อมเสร็จสิ้น
+                </button>
+              ` : ''}
+              <button class="btn btn-secondary" onclick="deleteReport('${report.id}')" style="padding:4px 8px; font-size:11px; background:#fee2e2; border-color:#fca5a5; color:#dc2626;">
+                ลบ
+              </button>
+            </div>
+          </div>
+        `;
+        container.insertAdjacentHTML('beforeend', cardHtml);
+      });
+    }
+
+    function locateLight(lightId) {
+      const light = allLights.find(l => l.id === lightId);
+      if (light) {
+        map.setView([light.lat, light.lng], 18);
+        markersGroup.eachLayer(layer => {
+          if (layer.getLatLng().lat === light.lat && layer.getLatLng().lng === light.lng) {
+            layer.openPopup();
+          }
+        });
+      }
+    }
+
+    function updateReportStatus(reportId, lightId, newStatus) {
+      if (newStatus === 'resolved') {
+        Swal.fire({
+          title: 'อัปโหลดภาพรายงานปิดงาน',
+          text: 'กรุณาเลือกรูปภาพหลักฐานแสดงความเรียบร้อยของการซ่อมแซม (ถ้ามี)',
+          input: 'file',
+          inputAttributes: {
+            'accept': 'image/*',
+            'aria-label': 'อัปโหลดรูปภาพปิดงานซ่อม'
+          },
+          showCancelButton: true,
+          confirmButtonText: 'บันทึกและปิดงาน',
+          cancelButtonText: 'ยกเลิก',
+          confirmButtonColor: '#16a34a',
+          cancelButtonColor: '#4b5563',
+          background: '#ffffff',
+          color: '#0f172a',
+          showLoaderOnConfirm: true,
+          preConfirm: (file) => {
+            if (!file) {
+              return Promise.resolve(null);
+            }
+            if (isDemoMode) {
+              return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+              });
+            } else {
+              const storageRef = firebase.storage().ref();
+              const photoRef = storageRef.child(`resolved_photos/${reportId}_${Date.now()}.jpg`);
+              return photoRef.put(file)
+                .then(snapshot => snapshot.ref.getDownloadURL())
+                .catch(error => {
+                  Swal.showValidationMessage(`เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: ${error.message}`);
+                });
+            }
+          },
+          allowOutsideClick: () => !Swal.isLoading()
+        }).then((result) => {
+          if (result.isDismissed) return;
+          const imageUrl = result.value;
+          saveReportStatus(reportId, lightId, 'resolved', imageUrl);
+        });
+      } else {
+        saveReportStatus(reportId, lightId, newStatus, null);
+      }
+    }
+
+    function saveReportStatus(reportId, lightId, newStatus, imageUrl) {
+      const newLightStatus = newStatus === 'resolved' ? 'working' : 'pending';
+
+      if (isDemoMode) {
+        // อัปเดตใน Local Storage
+        const localReports = JSON.parse(localStorage.getItem('smart_reports')) || [];
+        const rIndex = localReports.findIndex(r => r.id === reportId);
+        if (rIndex !== -1) {
+          localReports[rIndex].status = newStatus;
+          if (imageUrl) {
+            localReports[rIndex].resolvedImageUrl = imageUrl;
+          }
+          localReports[rIndex].resolvedTime = new Date().toISOString();
+          localStorage.setItem('smart_reports', JSON.stringify(localReports));
+        }
+
+        const localLights = JSON.parse(localStorage.getItem('smart_lights')) || [];
+        const lIndex = localLights.findIndex(l => l.id === lightId);
+        if (lIndex !== -1) {
+          localLights[lIndex].status = newLightStatus;
+          localLights[lIndex].lastUpdated = new Date().toISOString();
+          localStorage.setItem('smart_lights', JSON.stringify(localLights));
+        }
+
+        Swal.fire({
+          title: 'บันทึกสำเร็จ!',
+          text: 'ดำเนินการปรับสถานะแจ้งซ่อมเรียบร้อยแล้ว (โหมดเดโม)',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false,
+          background: '#ffffff',
+          color: '#0f172a'
+        });
+        loadData();
+      } else {
+        // อัปเดตใน Firestore
+        const updateData = {
+          status: newStatus,
+          resolvedTime: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if (imageUrl) {
+          updateData.resolvedImageUrl = imageUrl;
+        }
+
+        db.collection('reports').doc(reportId).update(updateData).then(() => {
+          return db.collection('lights').doc(lightId).update({
+            status: newLightStatus,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }).then(() => {
+          Swal.fire({
+            title: 'บันทึกสำเร็จ!',
+            text: 'ปรับสถานะและส่งข้อมูลเข้าคลาวด์เรียบร้อยแล้ว',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false,
+            background: '#ffffff',
+            color: '#0f172a'
+          });
+        }).catch(err => {
+          console.error("Error updating status: ", err);
+          Swal.fire({
+            title: 'เกิดข้อผิดพลาด!',
+            text: 'ไม่สามารถอัปเดตข้อมูลสถานะได้ กรุณาลองใหม่อีกครั้ง',
+            icon: 'error',
+            confirmButtonText: 'ตกลง',
+            background: '#ffffff',
+            color: '#0f172a'
+          });
+        });
+      }
+    }
+
+    function deleteReport(reportId) {
+      Swal.fire({
+        title: 'ยืนยันการลบรายการ?',
+        text: 'คุณแน่ใจหรือไม่ว่าต้องการลบรายการแจ้งซ่อมนี้ออกจากระบบ?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#4b5563',
+        confirmButtonText: 'ใช่, ต้องการลบ',
+        cancelButtonText: 'ยกเลิก',
+        background: '#161c2d',
+        color: '#f3f4f6'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          if (isDemoMode) {
+            let localReports = JSON.parse(localStorage.getItem('smart_reports')) || [];
+            localReports = localReports.filter(r => r.id !== reportId);
+            localStorage.setItem('smart_reports', JSON.stringify(localReports));
+            loadData();
+            Swal.fire({
+              title: 'ลบเสร็จสิ้น!',
+              text: 'ข้อมูลรายการแจ้งซ่อมถูกลบออกจากระบบชั่วคราวแล้ว',
+              icon: 'success',
+              confirmButtonText: 'ตกลง',
+              background: '#161c2d',
+              color: '#f3f4f6',
+              confirmButtonColor: '#10b981'
+            });
+          } else {
+            db.collection('reports').doc(reportId).delete()
+              .then(() => {
+                Swal.fire({
+                  title: 'ลบเสร็จสิ้น!',
+                  text: 'ข้อมูลรายการแจ้งซ่อมถูกลบออกจากคลาวด์แล้ว',
+                  icon: 'success',
+                  confirmButtonText: 'ตกลง',
+                  background: '#161c2d',
+                  color: '#f3f4f6',
+                  confirmButtonColor: '#10b981'
+                });
+              })
+              .catch(err => console.error(err));
+          }
+        }
+      });
+    }
+
+    // ระบบ Sidebar ด้านซ้ายและระบบดึงเมนูลอย
+    function openDrawer(mode) {
+      const drawer = document.getElementById('leftDrawer');
+      const title = document.getElementById('drawerTitle');
+      const statsPanel = document.getElementById('drawerStatsPanel');
+      const managePanel = document.getElementById('drawerManagePanel');
+      const addPanel = document.getElementById('drawerAddPanel');
+      
+      // ถ้ากำลังอยู่ในโหมดเพิ่ม/แก้ไขเสาไฟแล้วสลับไปหน้าอื่น ให้ล้างฟอร์ม
+      if (mode !== 'add' && addPanel.style.display === 'block') {
+        resetPoleForm();
+      }
+      
+      statsPanel.style.display = 'none';
+      managePanel.style.display = 'none';
+      addPanel.style.display = 'none';
+      
+      isAddingPoleMode = false;
+      
+      if (mode === 'stats') {
+        title.innerHTML = `<i class="fa-solid fa-chart-line" style="color: var(--accent-cyan); font-size: 16px;"></i> สถิติรายเดือน`;
+        statsPanel.style.display = 'block';
+        updateMonthlyStats();
+      } else if (mode === 'manage') {
+        title.innerHTML = `<i class="fa-solid fa-print" style="color: var(--accent-blue); font-size: 16px;"></i> คิวพิมพ์สติกเกอร์`;
+        managePanel.style.display = 'block';
+        updatePrintQueueUI();
+      } else if (mode === 'add') {
+        title.innerHTML = `<i class="fa-solid fa-circle-plus" style="color: var(--color-success); font-size: 16px;"></i> เพิ่ม/แก้ไขเสาไฟ`;
+        addPanel.style.display = 'block';
+        isAddingPoleMode = true;
+        
+        // แสดง SweetAlert Toast แจ้งเตือนแอดมินให้คลิกแผนที่
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'info',
+          title: 'โหมดเลือกพิกัด: คลิกบนแผนที่เพื่อระบุตำแหน่งเสาไฟ',
+          showConfirmButton: false,
+          timer: 3500,
+          timerProgressBar: true
+        });
+      }
+      
+      drawer.style.transform = 'translateX(0)';
+    }
+
+    function closeDrawer() {
+      const drawer = document.getElementById('leftDrawer');
+      drawer.style.transform = 'translateX(-100%)';
+      isAddingPoleMode = false;
+      
+      if (document.getElementById('editPoleId').value) {
+        resetPoleForm();
+      }
+    }
+
+    // แถบเมนูรายการแจ้งเสียด้านขวาแสดงผลแบบคงที่ตลอดเวลา
+
+    document.getElementById('poleForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const id = document.getElementById('editPoleId').value;
+      const code = document.getElementById('poleCode').value;
+      const name = document.getElementById('poleName').value;
+      const zone = document.getElementById('poleZone').value;
+      const lat = parseFloat(document.getElementById('poleLat').value);
+      const lng = parseFloat(document.getElementById('poleLng').value);
+      const status = document.getElementById('poleStatus').value;
+
+      const poleData = {
+        code: code,
+        name: name,
+        zone: zone,
+        lat: lat,
+        lng: lng,
+        status: status,
+        lastUpdated: new Date()
+      };
+
+      if (isDemoMode) {
+        const localLights = JSON.parse(localStorage.getItem('smart_lights')) || [];
+
+        if (id) {
+          // แก้ไขรายการเดิม
+          const index = localLights.findIndex(l => l.id === id);
+          if (index !== -1) {
+            localLights[index] = { ...localLights[index], ...poleData, lastUpdated: new Date().toISOString() };
+          }
+        } else {
+          // เพิ่มเสาไฟใหม่
+          const newId = 'pole_' + Math.random().toString(36).substr(2, 9);
+          localLights.push({ id: newId, ...poleData, lastUpdated: new Date().toISOString() });
+        }
+
+        localStorage.setItem('smart_lights', JSON.stringify(localLights));
+        Swal.fire({
+          title: 'บันทึกสำเร็จ!',
+          text: 'บันทึกข้อมูลเสาไฟเสร็จเรียบร้อย (โหมดเดโม)',
+          icon: 'success',
+          confirmButtonText: 'ตกลง',
+          background: '#161c2d',
+          color: '#f3f4f6',
+          confirmButtonColor: '#06b6d4'
+        });
+        resetPoleForm();
+        closeDrawer();
+        loadData();
+      } else {
+        // จัดการบน Firestore
+        const promise = id ?
+          db.collection('lights').doc(id).update(poleData) :
+          db.collection('lights').add(poleData);
+
+        promise.then(() => {
+          Swal.fire({
+            title: 'บันทึกสำเร็จ!',
+            text: 'ข้อมูลเสาไฟในระบบได้รับการอัปเดตเรียบร้อยแล้ว',
+            icon: 'success',
+            confirmButtonText: 'ตกลง',
+            background: '#161c2d',
+            color: '#f3f4f6',
+            confirmButtonColor: '#10b981'
+          });
+          resetPoleForm();
+          closeDrawer();
+        }).catch(err => {
+          console.error("Save Error: ", err);
+          Swal.fire({
+            title: 'เกิดข้อผิดพลาด!',
+            text: 'ไม่สามารถบันทึกข้อมูลเสาไฟได้ กรุณาลองใหม่อีกครั้ง',
+            icon: 'error',
+            confirmButtonText: 'ตกลง',
+            background: '#161c2d',
+            color: '#f3f4f6',
+            confirmButtonColor: '#ef4444'
+          });
+        });
+      }
+    });
+
+    function editPole(id) {
+      const light = allLights.find(l => l.id === id);
+      if (!light) return;
+
+      openDrawer('add');
+      document.getElementById('formActionTitle').innerText = "แก้ไขเสาไฟรหัส: " + light.code;
+
+      document.getElementById('editPoleId').value = light.id;
+      document.getElementById('poleCode').value = light.code;
+      document.getElementById('poleName').value = light.name;
+      document.getElementById('poleZone').value = light.zone || 'เขต 1';
+      document.getElementById('poleLat').value = light.lat;
+      document.getElementById('poleLng').value = light.lng;
+      document.getElementById('poleStatus').value = light.status;
+      document.getElementById('saveBtn').innerHTML = `<i class="fa-solid fa-save"></i> บันทึกการแก้ไข`;
+
+      map.setView([light.lat, light.lng], 18);
+    }
+
+    function deletePole(id) {
+      Swal.fire({
+        title: 'ยืนยันการลบเสาไฟ?',
+        text: 'ข้อมูลเสาไฟจะสูญหายอย่างถาวร และคิวอาร์โค้ดที่ติดอยู่กับเสาจริงจะไม่สามารถแจ้งเสียได้อีกต่อไป',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#4b5563',
+        confirmButtonText: 'ใช่, ยืนยันการลบ',
+        cancelButtonText: 'ยกเลิก',
+        background: '#161c2d',
+        color: '#f3f4f6'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          if (isDemoMode) {
+            let localLights = JSON.parse(localStorage.getItem('smart_lights')) || [];
+            localLights = localLights.filter(l => l.id !== id);
+            localStorage.setItem('smart_lights', JSON.stringify(localLights));
+            resetPoleForm();
+            loadData();
+            Swal.fire({
+              title: 'ลบสำเร็จ!',
+              text: 'ข้อมูลเสาไฟได้รับการลบออกจากระบบจำลองแล้ว',
+              icon: 'success',
+              confirmButtonText: 'ตกลง',
+              background: '#161c2d',
+              color: '#f3f4f6',
+              confirmButtonColor: '#10b981'
+            });
+          } else {
+            db.collection('lights').doc(id).delete()
+              .then(() => {
+                Swal.fire({
+                  title: 'ลบสำเร็จ!',
+                  text: 'ข้อมูลเสาไฟได้รับการลบออกจากฐานข้อมูลคลาวด์แล้ว',
+                  icon: 'success',
+                  confirmButtonText: 'ตกลง',
+                  background: '#161c2d',
+                  color: '#f3f4f6',
+                  confirmButtonColor: '#10b981'
+                });
+                resetPoleForm();
+              })
+              .catch(err => {
+                console.error(err);
+                Swal.fire({
+                  title: 'เกิดข้อผิดพลาด!',
+                  text: 'ไม่สามารถลบข้อมูลเสาไฟได้ กรุณาลองใหม่อีกครั้ง',
+                  icon: 'error',
+                  confirmButtonText: 'ตกลง',
+                  background: '#161c2d',
+                  color: '#f3f4f6',
+                  confirmButtonColor: '#ef4444'
+                });
+              });
+          }
+        }
+      });
+    }
+
+    function resetPoleForm() {
+      document.getElementById('poleForm').reset();
+      document.getElementById('editPoleId').value = '';
+      document.getElementById('formActionTitle').innerText = "เพิ่มเสาไฟใหม่";
+      document.getElementById('saveBtn').innerHTML = `<i class="fa-solid fa-save"></i> บันทึกข้อมูล`;
+      isAddingPoleMode = false;
+
+      if (activeMarkerLocation) {
+        map.removeLayer(activeMarkerLocation);
+        activeMarkerLocation = null;
+      }
+    }
+
+    // ==========================================
+    // 8. ระบบสร้าง QR Code พาสเวิร์ด/พิมพ์
+    // ==========================================
+    // ==========================================
+    // 8. ระบบสร้าง QR Code และระบบคิวพิมพ์
+    // ==========================================
+    function openQrModal(lightId) {
+      const light = allLights.find(l => l.id === lightId);
+      if (!light) return;
+
+      activeModalLightId = lightId;
+      document.getElementById('qrPoleCode').innerText = light.code;
+      document.getElementById('qrPoleName').innerText = light.name;
+      document.getElementById('qrPoleZone').innerText = `เขตการดูแล: ${light.zone || 'ไม่ระบุ'}`;
+
+      // อัปเดตสถานะปุ่มใน Modal
+      updateModalQueueButton();
+
+      // สร้าง URL สำหรับชี้ไปหา LINE LIFF App เพื่อเปิดผ่านไลน์และผูกพิกัดเสาไฟ
+      const citizenUrl = `https://liff.line.me/2010257650-zLeZKHVD?lightId=${light.id}`;
+
+      // รีเซ็ตพื้นที่ก่อนสร้างคิวอาร์โค้ดใหม่
+      document.getElementById('qrcode').innerHTML = '';
+
+      // สั่งงานไลบรารี QRCode.js สร้างรูป
+      qrcodeObj = new QRCode(document.getElementById("qrcode"), {
+        text: citizenUrl,
+        width: 150,
+        height: 150,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      document.getElementById('qrModal').style.display = 'flex';
+    }
+
+    function closeQrModal() {
+      activeModalLightId = null;
+      document.getElementById('qrModal').style.display = 'none';
+    }
+
+    function downloadQrCode() {
+      // ดึงรูป QR ที่ไลบรารีสร้างขึ้นในแท็ก img หรือ canvas
+      const imgElement = document.querySelector('#qrcode img');
+      const canvasElement = document.querySelector('#qrcode canvas');
+      const poleCode = document.getElementById('qrPoleCode').innerText;
+
+      if (imgElement && imgElement.src) {
+        const link = document.createElement('a');
+        link.href = imgElement.src;
+        link.download = `QR_${poleCode}.png`;
+        link.click();
+      } else if (canvasElement) {
+        const link = document.createElement('a');
+        link.href = canvasElement.toDataURL("image/png");
+        link.download = `QR_${poleCode}.png`;
+        link.click();
+      }
+    }
+
+    function printQrSticker() {
+      if (!activeModalLightId) return;
+      
+      const printArea = document.getElementById('bulkPrintArea');
+      if (!printArea) return;
+      
+      printArea.innerHTML = '';
+      
+      const light = allLights.find(l => l.id === activeModalLightId);
+      
+      if (light) {
+        const citizenUrl = `https://liff.line.me/2010257650-zLeZKHVD?lightId=${light.id}`;
+        
+        const card = document.createElement('div');
+        card.className = 'print-sticker-card';
+        card.style.margin = "0 auto"; 
+        card.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: center; gap: 8px; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 8px; width: 100%;">
+            <img src="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png" alt="โลโก้เทศบาล" style="height: 32px; width: auto; object-fit: contain;">
+            <div style="text-align: left;">
+              <h4 style="font-size: 11px; font-weight: 800; margin: 0; color: #000; font-family: 'Noto Sans Thai', sans-serif;">เทศบาลตำบลตันหยงมัส</h4>
+              <p style="font-size: 8px; font-weight: 600; margin: 0; color: #000; font-family: 'Noto Sans Thai', sans-serif;">ระบบแจ้งซ่อมไฟฟ้าสาธารณะอัจฉริยะ</p>
+            </div>
+          </div>
+          
+          <p style="font-size: 8px; font-weight: bold; margin-bottom: 6px; color: #000; font-family: 'Noto Sans Thai', sans-serif;">
+            <i class="fa-solid fa-circle-exclamation"></i> พบไฟดับ/ชำรุด สแกนแจ้งซ่อมที่นี่
+          </p>
+
+          <div style="background: white; padding: 6px; display: inline-block; border: 1px solid #000; margin-bottom: 6px;">
+            <div id="bulk-qr-${light.id}"></div>
+          </div>
+
+          <div style="width: 100%;">
+            <h2 style="font-weight: 800; font-size: 14px; color: #000; background: #fff; display: inline-block; padding: 2px 10px; border-radius: 4px; margin-bottom: 4px; border: 2px dashed #000; font-family: 'Noto Sans Thai', sans-serif;">${light.code}</h2>
+            <div style="font-size: 9px; font-weight: 600; color: #000; line-height: 1.2; font-family: 'Noto Sans Thai', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${light.name}</div>
+            <div style="font-size: 8px; color: #000; font-family: 'Noto Sans Thai', sans-serif; margin-top: 1px;">เขตการดูแล: ${light.zone || 'ไม่ระบุ'} | LINE ID: @741cbbgl</div>
+          </div>
+        `;
+        
+        printArea.appendChild(card);
+        
+        new QRCode(document.getElementById(`bulk-qr-${light.id}`), {
+          text: citizenUrl,
+          width: 100,
+          height: 100,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+        
+        setTimeout(() => {
+          window.print();
+        }, 500);
+      }
+    }
+
+    // ฟังก์ชันเสริมสำหรับการจัดการคิวพิมพ์
+    function toggleQueue(lightId) {
+      const index = printQueue.indexOf(lightId);
+      if (index === -1) {
+        printQueue.push(lightId);
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'เพิ่มเข้าคิวพิมพ์สำเร็จ',
+          showConfirmButton: false,
+          timer: 1500
+        });
+      } else {
+        printQueue.splice(index, 1);
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'info',
+          title: 'นำออกจากคิวพิมพ์แล้ว',
+          showConfirmButton: false,
+          timer: 1500
+        });
+      }
+      localStorage.setItem('smart_print_queue', JSON.stringify(printQueue));
+      updatePrintQueueUI();
+    }
+
+    function toggleQueueFromMap(lightId) {
+      toggleQueue(lightId);
+      displayLightsOnMap();
+      
+      // ให้ Popup ยังเปิดอยู่ของเสาไฟต้นนี้
+      markersGroup.eachLayer(layer => {
+        const latLng = layer.getLatLng();
+        const light = allLights.find(l => l.id === lightId);
+        if (light && latLng.lat === light.lat && latLng.lng === light.lng) {
+          layer.openPopup();
+        }
+      });
+    }
+
+    function toggleQueueFromModal() {
+      if (!activeModalLightId) return;
+      toggleQueue(activeModalLightId);
+      updateModalQueueButton();
+      displayLightsOnMap();
+    }
+
+    function updateModalQueueButton() {
+      if (!activeModalLightId) return;
+      const btn = document.getElementById('modalQueueBtn');
+      const isInQueue = printQueue.includes(activeModalLightId);
+      if (isInQueue) {
+        btn.innerHTML = `<i class="fa-solid fa-minus"></i> นำออกจากคิวพิมพ์`;
+        btn.style.cssText = "width: 100%; font-size: 13px; font-weight: 600; background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;";
+      } else {
+        btn.innerHTML = `<i class="fa-solid fa-plus"></i> เพิ่มเข้าคิวพิมพ์พร้อมกัน`;
+        btn.style.cssText = "width: 100%; font-size: 13px; font-weight: 600; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;";
+      }
+    }
+
+    function updatePrintQueueUI() {
+      const badge = document.getElementById('printQueueBadge');
+      const list = document.getElementById('printQueueList');
+      const emptyText = document.getElementById('printQueueEmptyText');
+      const btnPrint = document.getElementById('btnPrintBulk');
+      const btnClear = document.getElementById('btnClearBulk');
+      
+      badge.innerText = printQueue.length;
+      
+      if (printQueue.length === 0) {
+        list.style.display = 'none';
+        emptyText.style.display = 'block';
+        btnPrint.disabled = true;
+        btnClear.disabled = true;
+        return;
+      }
+      
+      list.style.display = 'block';
+      emptyText.style.display = 'none';
+      btnPrint.disabled = false;
+      btnClear.disabled = false;
+      
+      list.innerHTML = '';
+      printQueue.forEach(id => {
+        const light = allLights.find(l => l.id === id);
+        if (light) {
+          const item = document.createElement('div');
+          item.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: white; border: 1px solid var(--border-light); border-radius: 6px; margin-bottom: 6px;";
+          item.innerHTML = `
+            <div style="font-weight: 600;">${light.code} <span style="font-weight: normal; color: var(--text-muted); font-size: 11px;">(${light.name})</span></div>
+            <button onclick="toggleQueue('${light.id}'); displayLightsOnMap();" style="border: none; background: none; color: var(--color-danger); cursor: pointer; padding: 2px 6px;">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          `;
+          list.appendChild(item);
+        }
+      });
+    }
+
+    function clearPrintQueue() {
+      printQueue = [];
+      localStorage.setItem('smart_print_queue', JSON.stringify(printQueue));
+      updatePrintQueueUI();
+      displayLightsOnMap();
+      if (activeModalLightId) {
+        updateModalQueueButton();
+      }
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: 'ล้างคิวพิมพ์เรียบร้อยแล้ว',
+        showConfirmButton: false,
+        timer: 1500
+      });
+    }
+
+    function printBulkQr() {
+      const printArea = document.getElementById('bulkPrintArea');
+      if (!printArea) return;
+      
+      printArea.innerHTML = '';
+      
+      printQueue.forEach(id => {
+        const light = allLights.find(l => l.id === id);
+        if (light) {
+          const citizenUrl = `https://liff.line.me/2010257650-zLeZKHVD?lightId=${light.id}`;
+          
+          const card = document.createElement('div');
+          card.className = 'print-sticker-card';
+          card.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 8px; width: 100%;">
+              <img src="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png" alt="โลโก้เทศบาล" style="height: 32px; width: auto; object-fit: contain;">
+              <div style="text-align: left;">
+                <h4 style="font-size: 11px; font-weight: 800; margin: 0; color: #000; font-family: 'Noto Sans Thai', sans-serif;">เทศบาลตำบลตันหยงมัส</h4>
+                <p style="font-size: 8px; font-weight: 600; margin: 0; color: #000; font-family: 'Noto Sans Thai', sans-serif;">ระบบแจ้งซ่อมไฟฟ้าสาธารณะอัจฉริยะ</p>
+              </div>
+            </div>
+            
+            <p style="font-size: 8px; font-weight: bold; margin-bottom: 6px; color: #000; font-family: 'Noto Sans Thai', sans-serif;">
+              <i class="fa-solid fa-circle-exclamation"></i> พบไฟดับ/ชำรุด สแกนแจ้งซ่อมที่นี่
+            </p>
+
+            <div style="background: white; padding: 6px; display: inline-block; border: 1px solid #000; margin-bottom: 6px;">
+              <div id="bulk-qr-${light.id}"></div>
+            </div>
+
+            <div style="width: 100%;">
+              <h2 style="font-weight: 800; font-size: 14px; color: #000; background: #fff; display: inline-block; padding: 2px 10px; border-radius: 4px; margin-bottom: 4px; border: 2px dashed #000; font-family: 'Noto Sans Thai', sans-serif;">${light.code}</h2>
+              <div style="font-size: 9px; font-weight: 600; color: #000; line-height: 1.2; font-family: 'Noto Sans Thai', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${light.name}</div>
+              <div style="font-size: 8px; color: #000; font-family: 'Noto Sans Thai', sans-serif; margin-top: 1px;">เขตการดูแล: ${light.zone || 'ไม่ระบุ'} | LINE ID: @741cbbgl</div>
+            </div>
+          `;
+          
+          printArea.appendChild(card);
+          
+          new QRCode(document.getElementById(`bulk-qr-${light.id}`), {
+            text: citizenUrl,
+            width: 100,
+            height: 100,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+          });
+        }
+      });
+      
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    }
+
+    // ฟังก์ชันเสริมสำหรับสรุปสถิติประจำเดือน
+    function updateMonthlyStats() {
+      const monthSelect = document.getElementById('filterMonth');
+      const yearSelect = document.getElementById('filterYear');
+      if (!monthSelect || !yearSelect) return;
+      
+      const month = parseInt(monthSelect.value);
+      const year = parseInt(yearSelect.value);
+      
+      const monthlyReports = allReports.filter(report => {
+        if (!report.timestamp) return false;
+        let date;
+        if (report.timestamp.seconds) {
+          date = new Date(report.timestamp.seconds * 1000);
+        } else {
+          date = new Date(report.timestamp);
+        }
+        return date.getMonth() === month && date.getFullYear() === year;
+      });
+      
+      const totalCount = monthlyReports.length;
+      const resolvedCount = monthlyReports.filter(r => r.status === 'resolved').length;
+      
+      document.getElementById('monthlyTotalCount').innerText = totalCount;
+      document.getElementById('monthlyResolvedCount').innerText = resolvedCount;
+    }
+
+    function showMonthlyReportsDetail() {
+      const monthSelect = document.getElementById('filterMonth');
+      const yearSelect = document.getElementById('filterYear');
+      const monthName = monthSelect.options[monthSelect.selectedIndex].text;
+      const yearVal = yearSelect.value;
+      
+      const month = parseInt(monthSelect.value);
+      const year = parseInt(yearVal);
+      
+      const monthlyReports = allReports.filter(report => {
+        if (!report.timestamp) return false;
+        let date;
+        if (report.timestamp.seconds) {
+          date = new Date(report.timestamp.seconds * 1000);
+        } else {
+          date = new Date(report.timestamp);
+        }
+        return date.getMonth() === month && date.getFullYear() === year;
+      });
+      
+      if (monthlyReports.length === 0) {
+        Swal.fire({
+          title: `รายงานประจำเดือน ${monthName} ${parseInt(yearVal) + 543}`,
+          text: 'ไม่มีรายการแจ้งซ่อมหรือการดำเนินงานในเดือนนี้',
+          icon: 'info',
+          confirmButtonText: 'ตกลง',
+          background: '#ffffff',
+          color: 'var(--text-main)',
+          confirmButtonColor: 'var(--accent-blue)'
+        });
+        return;
+      }
+      
+      let reportsHtml = `
+        <div style="text-align: left; max-height: 400px; overflow-y: auto; font-family: var(--font-family); font-size: 13px;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border-light); color: var(--text-main);">
+                <th style="padding: 8px 4px; font-weight: 700; width: 80px;">วัน/เวลา</th>
+                <th style="padding: 8px 4px; font-weight: 700;">รหัสเสาไฟ</th>
+                <th style="padding: 8px 4px; font-weight: 700;">ปัญหาที่พบ</th>
+                <th style="padding: 8px 4px; font-weight: 700; text-align: right; width: 90px;">สถานะ</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      
+      monthlyReports.forEach(report => {
+        const dateStr = formatTime(report.timestamp).replace(' น.', '');
+        const statusText = report.status === 'resolved' ? 'ซ่อมเสร็จ' : report.status === 'in_progress' ? 'กำลังซ่อม' : 'รอดำเนินการ';
+        const statusColor = report.status === 'resolved' ? '#16a34a' : report.status === 'in_progress' ? '#d97706' : '#dc2626';
+        const statusBg = report.status === 'resolved' ? '#d1fae5' : report.status === 'in_progress' ? '#fef3c7' : '#fee2e2';
+        
+        reportsHtml += `
+          <tr style="border-bottom: 1px solid var(--border-light);">
+            <td style="padding: 10px 4px; color: var(--text-muted); font-size: 11px;">${dateStr}</td>
+            <td style="padding: 10px 4px; font-weight: 600; color: var(--text-main);">${report.lightCode}<br><span style="font-weight: normal; font-size: 10px; color: var(--text-muted);">${report.lightName}</span>${report.reporterName ? `<br><span style="font-size: 10px; color: #16a34a; font-weight: 700;"><i class="fa-brands fa-line"></i> LINE: ${report.reporterName}</span>` : ''}</td>
+            <td style="padding: 10px 4px; color: var(--text-muted); font-size: 12px;">
+              <strong>${report.issueType}</strong>
+              ${report.details ? `<br><span style="font-size: 11px; color: #64748b;">(${report.details})</span>` : ''}
+              ${report.resolvedImageUrl ? `<br><a href="${report.resolvedImageUrl}" target="_blank" style="color: var(--accent-cyan); font-size: 11px; text-decoration: none; font-weight: 600;"><i class="fa-solid fa-image"></i> ดูรูปภาพเสร็จงาน</a>` : ''}
+            </td>
+            <td style="padding: 10px 4px; text-align: right;">
+              <span style="background: ${statusBg}; color: ${statusColor}; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 700; display: inline-block;">
+                ${statusText}
+              </span>
+            </td>
+          </tr>
+        `;
+      });
+      
+      reportsHtml += `
+            </tbody>
+          </table>
+        </div>
+      `;
+      
+      Swal.fire({
+        title: `รายงานประจำเดือน ${monthName} ${parseInt(yearVal) + 543}`,
+        html: reportsHtml,
+        width: '600px',
+        confirmButtonText: 'ปิดหน้าต่าง',
+        background: '#ffffff',
+        color: 'var(--text-main)',
+        confirmButtonColor: 'var(--accent-blue)'
+      });
+    }
+
+    // ฟังก์ชันเสริมสำหรับแสดงผลวันเวลา
+    function formatTime(timestamp) {
+      if (!timestamp) return '-';
+
+      // จัดการกับ Timestamp ของ Firebase
+      let date;
+      if (timestamp.seconds) {
+        date = new Date(timestamp.seconds * 1000);
+      } else {
+        date = new Date(timestamp);
+      }
+
+      return date.toLocaleDateString('th-TH', {
+        day: '2-digit',
+        month: 'short',
+        year: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) + ' น.';
+    }
+  </script>
+</body>
+
+</html>
