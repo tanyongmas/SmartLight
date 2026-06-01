@@ -8,6 +8,7 @@
 
   <!-- CSS Stylesheet -->
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
 
   <!-- Leaflet CSS (Map) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -360,6 +361,7 @@
   <!-- Firebase Scripts (Compat Version เพื่อความง่ายในการใช้กับ HTML/JS ทั่วไปบนหน้าเว็บ) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
 
   <!-- SweetAlert2 (Modern Popups) -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -383,7 +385,15 @@
       measurementId: "G-9N8K32KDPM"
     };
 
+    // LINE Messaging API Configuration for Staff Notifications
+    const lineConfig = {
+      channelAccessToken: "44fvkGxNSGRGHt8ALVm5Cy3gKqnaLv9/IN2madluzOBhlt9EwBerGZtEt9JsPVPIItnhj/kN9omQAirCO90T0t2fMqWxV4/Qmiv1pTporI88Uv7kXtlEURCo7A8Om6xSK48UwD8BZYJW8oHQfLbQXQdB04t89/1O/w1cDnyilFU=", // รหัส Access Token จริง
+      useCorsProxy: true,                                 // ใช้ CORS Proxy สำหรับการทดสอบจากหน้าบ้าน
+      corsProxyUrl: "https://cors-anywhere.herokuapp.com/" // บริการ Proxy ฟรี (ต้องการเปิด cors-anywhere.herokuapp.com/corsdemo ก่อนใช้)
+    };
+
     let db;
+    let messaging;
     let isDemoMode = false;
     let map;
     let markersGroup;
@@ -399,6 +409,17 @@
         setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
       }, 600);
 
+      // ลงทะเบียน Service Worker สำหรับ Web Push
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('firebase-messaging-sw.js')
+          .then((registration) => {
+            console.log('Service Worker registered successfully:', registration);
+          })
+          .catch((error) => {
+            console.error('Service Worker registration failed:', error);
+          });
+      }
+
       initFirebase();
       initMap();
       loadLights();
@@ -409,6 +430,142 @@
         setTimeout(showHelpPopup, 1500);
       }
     });
+
+    // ==========================================
+    // 2.1 สคริปต์การขอสิทธิ์และการรับ FCM Token
+    // ==========================================
+    function requestNotificationPermissionAndGetToken() {
+      return new Promise((resolve) => {
+        if (!('Notification' in window)) {
+          console.warn("This browser does not support desktop notifications");
+          resolve(null);
+          return;
+        }
+
+        if (isDemoMode) {
+          // โหมดเดโม: ขอสิทธิ์บราวเซอร์โดยตรง เพื่อจำลองกล่องแจ้งเตือน
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              resolve("demo_token_" + Math.random().toString(36).substr(2, 9));
+            } else {
+              resolve(null);
+            }
+          });
+          return;
+        }
+
+        if (!messaging) {
+          resolve(null);
+          return;
+        }
+
+        Notification.requestPermission().then((permission) => {
+          if (permission === 'granted') {
+            console.log('Notification permission granted.');
+            messaging.getToken()
+              .then((currentToken) => {
+                if (currentToken) {
+                  console.log('FCM Token received:', currentToken);
+                  resolve(currentToken);
+                } else {
+                  console.warn('No registration token available.');
+                  resolve(null);
+                }
+              })
+              .catch((err) => {
+                console.error('An error occurred while retrieving token. ', err);
+                resolve(null);
+              });
+          } else {
+            console.warn('Notification permission denied.');
+            resolve(null);
+          }
+        });
+      });
+    }
+
+    // ==========================================
+    // 2.2 สคริปต์การส่งการแจ้งเตือนเจ้าหน้าที่ผ่าน LINE Messaging API
+    // ==========================================
+    function sendLineStaffNotification(reportData) {
+      if (lineConfig.channelAccessToken === "YOUR_LINE_CHANNEL_ACCESS_TOKEN" || lineConfig.channelAccessToken === "") {
+        console.warn("LINE Messaging API Channel Access Token is missing. Skipping notification.");
+        return;
+      }
+
+      const messageText = `🚨 มีการแจ้งซ่อมใหม่!\n\n• รหัสเสาไฟ: ${reportData.lightCode}\n• ชื่อตำแหน่ง: ${reportData.lightName}\n• ประเภทปัญหา: ${reportData.issueType}\n• รายละเอียด: ${reportData.details || 'ไม่มี'}\n• เบอร์โทรศัพท์ผู้แจ้ง: ${reportData.reporterPhone || 'ไม่ได้ระบุ'}\n\nจัดการงานได้ที่หน้าแดชบอร์ดเจ้าหน้าที่`;
+
+      // ดึงรายชื่อเจ้าหน้าที่ที่จะรับการแจ้งเตือน
+      if (isDemoMode) {
+        // ในโหมดเดโม ดึงจาก Local Storage
+        const demoStaff = JSON.parse(localStorage.getItem('smart_staff_line_channels')) || [];
+        const userIds = demoStaff.map(ch => ch.userId);
+        if (userIds.length === 0) {
+          console.warn("No registered staff found in Demo Mode. Please click 'Link LINE' in Dashboard first.");
+          return;
+        }
+        sendMulticastMessage(userIds, messageText);
+      } else {
+        // ในโหมดใช้งานจริง ดึงรายชื่อจาก Firestore
+        db.collection('staff_line_channels').get()
+          .then((snapshot) => {
+            const userIds = [];
+            snapshot.forEach(doc => {
+              const data = doc.data();
+              if (data.userId) {
+                userIds.push(data.userId);
+              }
+            });
+
+            if (userIds.length === 0) {
+              console.warn("No registered staff LINE IDs found in Firestore.");
+              return;
+            }
+
+            sendMulticastMessage(userIds, messageText);
+          })
+          .catch(err => {
+            console.error("Failed to fetch staff LINE channels from Firestore:", err);
+          });
+      }
+    }
+
+    function sendMulticastMessage(userIds, text) {
+      // ส่งด้วย Multicast API ของ LINE (ส่งได้สูงสุดครั้งละ 500 ไอดี)
+      const payload = {
+        to: userIds,
+        messages: [
+          {
+            type: "text",
+            text: text
+          }
+        ]
+      };
+
+      const url = "https://api.line.me/v2/bot/message/multicast";
+      const requestUrl = lineConfig.useCorsProxy ? (lineConfig.corsProxyUrl + url) : url;
+
+      fetch(requestUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + lineConfig.channelAccessToken
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("HTTP status " + response.status);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log("LINE Multicast Staff Notification sent successfully:", data);
+      })
+      .catch(err => {
+        console.error("Error sending LINE multicast staff notification:", err);
+      });
+    }
 
     // แสดงคำแนะนำการใช้งานในรูปแบบป๊อปอัป SweetAlert2 (โดยเฉพาะบนมือถือ)
     function showHelpPopup() {
@@ -445,6 +602,10 @@
         try {
           firebase.initializeApp(firebaseConfig);
           db = firebase.firestore();
+          // เริ่มต้นระบบ Messaging ถ้าสนับสนุนในเบราว์เซอร์
+          if (firebase.messaging.isSupported()) {
+            messaging = firebase.messaging();
+          }
         } catch (e) {
           console.error("Firebase init failed, switching to Demo Mode", e);
           isDemoMode = true;
@@ -637,7 +798,7 @@
     }
 
     // ส่งฟอร์มแจ้งเสีย
-    document.getElementById('reportForm').addEventListener('submit', (e) => {
+    document.getElementById('reportForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const lightId = document.getElementById('reportLightId').value;
@@ -648,6 +809,18 @@
       const targetLight = allLights.find(l => l.id === lightId);
       if (!targetLight) return;
 
+      // แสดงการโหลดพร้อมขออนุญาตแจ้งเตือน
+      Swal.fire({
+        title: 'กำลังบันทึกข้อมูล...',
+        text: 'กรุณาอนุญาตสิทธิ์รับการแจ้งเตือนบนมือถือเมื่อมีป๊อปอัปสอบถาม',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const fcmToken = await requestNotificationPermissionAndGetToken();
+
       const reportData = {
         lightId: lightId,
         lightCode: targetLight.code,
@@ -656,7 +829,8 @@
         details: details,
         reporterPhone: reporterPhone,
         status: 'pending',
-        timestamp: new Date()
+        timestamp: new Date(),
+        fcmToken: fcmToken
       };
 
       if (isDemoMode) {
@@ -674,6 +848,9 @@
         localReports.push({ id: 'REP_' + Math.random().toString(36).substr(2, 9), ...reportData, timestamp: new Date().toISOString() });
         localStorage.setItem('smart_reports', JSON.stringify(localReports));
 
+        // ส่งการแจ้งเตือนเจ้าหน้าที่ผ่าน LINE Messaging API
+        sendLineStaffNotification(reportData);
+
         Swal.fire({
           title: 'ส่งรายงานสำเร็จ!',
           text: 'บันทึกจำลองข้อมูลแจ้งเสียเสร็จเรียบร้อย (โหมดเดโม)',
@@ -689,6 +866,9 @@
         // บันทึกลงระบบจริง Firestore
         db.collection('reports').add(reportData)
           .then(() => {
+            // ส่งการแจ้งเตือนเจ้าหน้าที่ผ่าน LINE Messaging API
+            sendLineStaffNotification(reportData);
+
             // อัปเดตสถานะของไฟตัวนั้นเป็น 'broken'
             return db.collection('lights').doc(lightId).update({
               status: 'broken',
