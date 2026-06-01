@@ -495,39 +495,35 @@
 
       const messageText = `🚨 มีการแจ้งซ่อมใหม่!\n\n• รหัสเสาไฟ: ${reportData.lightCode}\n• ชื่อตำแหน่ง: ${reportData.lightName}\n• ประเภทปัญหา: ${reportData.issueType}\n• รายละเอียด: ${reportData.details || 'ไม่มี'}\n• เบอร์โทรศัพท์ผู้แจ้ง: ${reportData.reporterPhone || 'ไม่ได้ระบุ'}\n\nจัดการงานได้ที่หน้าแดชบอร์ดเจ้าหน้าที่`;
 
-      // ดึงรายชื่อเจ้าหน้าที่ที่จะรับการแจ้งเตือน
-      if (isDemoMode) {
-        // ในโหมดเดโม ดึงจาก Local Storage
-        const demoStaff = JSON.parse(localStorage.getItem('smart_staff_line_channels')) || [];
-        const userIds = demoStaff.map(ch => ch.userId);
+      // ดึงรายชื่อไอดีผู้ติดตามทั้งหมดที่แอดไลน์ OA เป็นเพื่อน
+      const followersUrl = "https://api.line.me/v2/bot/followers/ids";
+      const requestFollowersUrl = lineConfig.useCorsProxy ? (lineConfig.corsProxyUrl + followersUrl) : followersUrl;
+
+      fetch(requestFollowersUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': 'Bearer ' + lineConfig.channelAccessToken
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("HTTP status " + response.status);
+        }
+        return response.json();
+      })
+      .then(data => {
+        const userIds = data.userIds || [];
         if (userIds.length === 0) {
-          console.warn("No registered staff found in Demo Mode. Please click 'Link LINE' in Dashboard first.");
+          console.warn("No followers found for this LINE OA. Please add friend first.");
           return;
         }
+
+        console.log(`Found ${userIds.length} follower(s) to notify.`);
         sendMulticastMessage(userIds, messageText);
-      } else {
-        // ในโหมดใช้งานจริง ดึงรายชื่อจาก Firestore
-        db.collection('staff_line_channels').get()
-          .then((snapshot) => {
-            const userIds = [];
-            snapshot.forEach(doc => {
-              const data = doc.data();
-              if (data.userId) {
-                userIds.push(data.userId);
-              }
-            });
-
-            if (userIds.length === 0) {
-              console.warn("No registered staff LINE IDs found in Firestore.");
-              return;
-            }
-
-            sendMulticastMessage(userIds, messageText);
-          })
-          .catch(err => {
-            console.error("Failed to fetch staff LINE channels from Firestore:", err);
-          });
-      }
+      })
+      .catch(err => {
+        console.error("Failed to fetch LINE OA followers:", err);
+      });
     }
 
     function sendMulticastMessage(userIds, text) {
