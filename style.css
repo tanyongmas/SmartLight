@@ -1,0 +1,267 @@
+/* นำเข้าฟอนต์ Google Fonts - Inter และ Noto Sans Thai */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* ระบบสีสันพรีเมียม - Light Clean Theme */
+  --bg-primary: #f8fafc;         /* Slate 50 - พื้นหลังหลัก */
+  --bg-secondary: #ffffff;       /* สีขาว - พื้นหลังแผงควบคุม/การ์ด */
+  --glass-bg: rgba(255, 255, 255, 0.9); /* การ์ดใสธีมสว่าง */
+  --glass-border: rgba(15, 23, 42, 0.08); /* เส้นขอบจางสีเข้ม */
+  --border-light: #e2e8f0;       /* Slate 200 - เส้นขอบปกติ */
+  --text-main: #0f172a;          /* Slate 900 - ข้อความหลัก */
+  --text-muted: #475569;         /* Slate 600 - ข้อความรอง */
+  
+  --accent-cyan: #0284c7;        /* Sky 600 - สีฟ้าสดใส */
+  --accent-blue: #2563eb;        /* Blue 600 - สีน้ำเงินเด่น */
+  
+  /* สีสถานะ */
+  --color-success: #16a34a;      /* Green 600 - ทำงานปกติ */
+  --color-warning: #d97706;      /* Amber 600 - กำลังซ่อม */
+  --color-danger: #dc2626;       /* Red 600 - ไฟชำรุด */
+  
+  --font-family: 'Inter', 'Noto Sans Thai', sans-serif;
+  --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism Card Style - Light Version */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+}
+
+/* ปุ่มสไตล์โมเดิร์น */
+.btn {
+  font-family: var(--font-family);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  color: #fff;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+}
+
+.btn-secondary {
+  background: #f1f5f9;
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
+}
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+/* ฟอร์มและอินพุต */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-muted);
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  color: var(--text-main);
+  font-family: var(--font-family);
+  font-size: 14px;
+  transition: var(--transition-fast);
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
+
+/* แผนที่ Leaflet Customization */
+#map {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.leaflet-container {
+  background: var(--bg-primary) !important;
+  font-family: var(--font-family) !important;
+}
+
+/* ตกแต่ง Leaflet Popups - Light Clean */
+.leaflet-popup-content-wrapper {
+  background: #ffffff !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05) !important;
+  padding: 4px;
+}
+
+.leaflet-popup-tip {
+  background: #ffffff !important;
+  border: 1px solid var(--border-light) !important;
+  box-shadow: none !important;
+}
+
+.leaflet-popup-content {
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  margin: 12px 14px !important;
+}
+
+.leaflet-popup-content h4 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text-main);
+}
+
+.leaflet-popup-close-button {
+  color: var(--text-muted) !important;
+}
+
+/* สไตล์สถานะเป็นเม็ดกลม - Light Colors */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.badge-working {
+  background: #d1fae5;
+  color: #15803d;
+}
+.badge-working::before {
+  background: #16a34a;
+}
+
+.badge-pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+.badge-pending::before {
+  background: #d97706;
+}
+
+.badge-broken {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.badge-broken::before {
+  background: #dc2626;
+}
+
+/* สไลด์เลื่อน หรือหน้าโหลดดิง */
+.loader-container {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-primary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  transition: opacity 0.5s ease;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(15, 23, 42, 0.05);
+  border-left-color: var(--accent-cyan);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ปรับแต่งความกว้างสำหรับอุปกรณ์มือถือและจอคอมพิวเตอร์ */
+@media (max-width: 768px) {
+  .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+/* ตกแต่งแผงควบคุมสลับแผนที่ (Leaflet Layer Control) ให้สวยงามทันสมัย */
+.leaflet-control-layers {
+  border: 1px solid var(--border-light) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+  font-family: var(--font-family) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 6px 10px !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+.leaflet-control-layers-list label {
+  margin: 4px 0;
+  display: block;
+  cursor: pointer;
+}
