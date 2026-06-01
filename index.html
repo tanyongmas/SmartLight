@@ -28,17 +28,22 @@
     }
 
     .sidebar {
-      width: 420px;
-      height: 100%;
-      padding: 24px;
-      display: flex;
+      position: absolute;
+      top: 116px; /* ขยับลงมาใต้ Logo Card บน Desktop */
+      left: 24px;
+      width: 380px;
+      height: auto;
+      max-height: calc(100vh - 140px);
+      padding: 20px;
+      display: none; /* ซ่อนไว้เริ่มต้นบน Desktop */
       flex-direction: column;
-      gap: 20px;
-      z-index: 10;
+      gap: 16px;
+      z-index: 1000;
       overflow-y: auto;
-      flex-shrink: 0;
       background: var(--bg-secondary);
-      border-right: 1px solid var(--border-light);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+      border: 1px solid var(--border-light);
     }
 
     .map-wrapper {
@@ -47,14 +52,31 @@
       position: relative;
     }
 
-    .logo-area {
+    /* แถบโลโก้ลอย (Header) */
+    .logo-card {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      width: 380px;
+      z-index: 999;
+      padding: 16px 20px;
       display: flex;
       align-items: center;
       gap: 12px;
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+      border: 1px solid var(--border-light);
+    }
+
+    .logo-card img {
+      height: 42px;
+      width: auto;
+      object-fit: contain;
     }
 
     .logo-text h1 {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       color: var(--text-main);
       line-height: 1.2;
@@ -64,6 +86,7 @@
       font-size: 11px;
       color: var(--text-muted);
       font-weight: 500;
+      margin-top: 2px;
     }
 
     /* สไตล์แบบฟอร์มการแจ้งซ่อม */
@@ -77,6 +100,7 @@
         transform: translateY(15px);
         opacity: 0;
       }
+
       to {
         transform: translateY(0);
         opacity: 1;
@@ -125,26 +149,13 @@
       display: none;
     }
 
-    /* สไตล์องค์กรสำหรับแถบโลโก้ลอยบนมือถือ */
-    .mobile-logo-card {
-      display: none;
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      right: 16px;
-      z-index: 999;
-      padding: 12px 16px;
-      border-radius: 14px;
-      background: var(--bg-secondary);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
-      border: 1px solid var(--border-light);
-      align-items: center;
-      gap: 12px;
-    }
+    /* แถบโลโก้ได้รับการย้ายไปใช้ .logo-card ด้านบนเพื่อรองรับทั้ง Desktop และ Mobile */
 
     /* ปุ่มช่วยเหลือลอยบนแผนที่สำหรับมือถือ */
     .mobile-help-btn {
-      display: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       position: absolute;
       bottom: 24px;
       left: 50%;
@@ -162,7 +173,7 @@
       cursor: pointer;
       transition: var(--transition-fast);
     }
-    
+
     .mobile-help-btn:hover {
       background: var(--accent-blue);
       transform: translateX(-50%) translateY(-1px);
@@ -180,6 +191,7 @@
 
       .sidebar {
         position: absolute;
+        top: auto !important; /* รีเซ็ตค่า top ของ desktop บนมือถือ */
         bottom: 0;
         left: 0;
         right: 0;
@@ -195,9 +207,10 @@
         margin-top: 0;
         transform: translateY(100%);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: none; /* ซ่อนเริ่มต้น */
+        display: none;
+        /* ซ่อนเริ่มต้น */
       }
-      
+
       .sidebar.active {
         display: flex !important;
         transform: translateY(0);
@@ -210,16 +223,25 @@
         inset: 0;
       }
 
-      .mobile-logo-card {
-        display: flex;
+      .logo-card {
+        top: 16px;
+        left: 16px;
+        right: 16px;
+        width: auto;
+        padding: 12px 16px;
+        border-radius: 14px;
       }
 
-      .mobile-help-btn {
-        display: inline-flex;
+      .logo-card img {
+        height: 36px;
       }
 
-      #generalInstructions {
-        display: none !important;
+      .logo-card .logo-text h1 {
+        font-size: 13px;
+      }
+
+      .logo-card .logo-text p {
+        font-size: 10px;
       }
     }
   </style>
@@ -238,12 +260,12 @@
     Firebase ในโค้ดเพื่อใช้งานระบบจริง)
   </div>
 
-  <!-- แถบโลโก้ลอยสำหรับมือถือ -->
-  <div class="mobile-logo-card">
-    <img src="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png" alt="โลโก้เทศบาลตำบลตันหยงมัส" style="height: 38px; width: auto; object-fit: contain;">
+  <!-- แถบโลโก้ลอย (Header) -->
+  <div class="logo-card glass-panel">
+    <img src="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png" alt="โลโก้เทศบาลตำบลตันหยงมัส">
     <div class="logo-text">
-      <h1 style="font-size: 13px; font-weight: 700; color: var(--text-main);">ระบบแจ้งซ่อมปัญหาไฟฟ้า</h1>
-      <p style="font-size: 10px; color: var(--text-muted); margin-top: 1px;">ในเขตเทศบาลตำบลตันหยงมัส</p>
+      <h1>ระบบแจ้งซ่อมปัญหาไฟฟ้าสาธารณะ</h1>
+      <p>ในเขตเทศบาลตำบลตันหยงมัส</p>
     </div>
   </div>
 
@@ -252,42 +274,13 @@
     <!-- แท็บเมนูด้านซ้ายและแบบฟอร์ม -->
     <div class="sidebar glass-panel">
 
-      <!-- โลโก้และหัวข้อ -->
-      <div class="logo-area">
-        <img src="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png" alt="โลโก้เทศบาลตำบลตันหยงมัส" style="height: 46px; width: auto; object-fit: contain;">
-        <div class="logo-text">
-          <h1>ระบบแจ้งซ่อมปัญหาไฟฟ้า</h1>
-          <p>ในเขตเทศบาลตำบลตันหยงมัส</p>
-        </div>
-      </div>
 
-      <hr style="border: 0; border-top: 1px solid var(--glass-border)">
-
-      <!-- คำแนะนำการใช้งานทั่วไป -->
-      <div id="generalInstructions">
-        <h3 style="font-size: 15px; margin-bottom: 10px; color: var(--text-main);">
-          <i class="fa-solid fa-map-location-dot" style="color: var(--accent-cyan)"></i> ขั้นตอนการแจ้งเสียเสาไฟ
-        </h3>
-        <ol
-          style="padding-left: 20px; font-size: 13px; color: var(--text-muted); display: flex; flex-direction: column; gap: 8px;">
-          <li>สแกน <strong>QR Code</strong> บนเสาไฟ หรือค้นหาตำแหน่งเสาไฟบนแผนที่</li>
-          <li>คลิกเลือกสัญลักษณ์หมุดเสาไฟที่ต้องการแจ้งเสีย</li>
-          <li>กดปุ่ม <strong>"คลิกเพื่อแจ้งเสีย/ชำรุด"</strong></li>
-          <li>กรอกข้อมูลอาการเสีย และกด <strong>"ส่งข้อมูลแจ้งซ่อม"</strong> เจ้าหน้าที่จะดำเนินการแก้ไขโดยเร็วที่สุด
-          </li>
-        </ol>
-
-        <div style="margin-top: 24px; text-align: center;">
-          <a href="dashboard.html" class="btn btn-secondary" style="width: 100%;">
-            <i class="fa-solid fa-user-shield"></i> เข้าสู่ระบบสำหรับเจ้าหน้าที่
-          </a>
-        </div>
-      </div>
 
       <!-- ฟอร์มการแจ้งซ่อม (จะเปิดขึ้นเมื่อเลือกไฟ) -->
       <div id="reportPanel" class="report-panel">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 style="font-size: 16px; color: var(--text-main);"><i class="fa-solid fa-circle-info"></i> รายละเอียดเสาไฟ</h3>
+          <h3 style="font-size: 16px; color: var(--text-main);"><i class="fa-solid fa-circle-info"></i> รายละเอียดเสาไฟ
+          </h3>
           <button class="btn btn-secondary" onclick="closeReportPanel()"
             style="padding: 4px 8px; font-size: 12px;">ปิด</button>
         </div>
@@ -361,7 +354,6 @@
   <!-- Firebase Scripts (Compat Version เพื่อความง่ายในการใช้กับ HTML/JS ทั่วไปบนหน้าเว็บ) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
 
   <!-- SweetAlert2 (Modern Popups) -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -393,7 +385,6 @@
     };
 
     let db;
-    let messaging;
     let isDemoMode = false;
     let map;
     let markersGroup;
@@ -409,80 +400,17 @@
         setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
       }, 600);
 
-      // ลงทะเบียน Service Worker สำหรับ Web Push
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('firebase-messaging-sw.js')
-          .then((registration) => {
-            console.log('Service Worker registered successfully:', registration);
-          })
-          .catch((error) => {
-            console.error('Service Worker registration failed:', error);
-          });
-      }
+
 
       initFirebase();
       initMap();
       loadLights();
 
-      // แสดงป๊อปอัปคำแนะนำบนมือถือหากไม่มีการสแกน QR Code เข้ามาโดยตรง
-      const urlParams = new URLSearchParams(window.location.search);
-      if (window.innerWidth <= 900 && !urlParams.has('lightId')) {
-        setTimeout(showHelpPopup, 1500);
-      }
+      // แสดงป๊อปอัปคำแนะนำขั้นตอนการแจ้งซ่อมไฟฟ้าเมื่อเข้าหน้าเว็บ
+      setTimeout(showHelpPopup, 1000);
     });
 
-    // ==========================================
-    // 2.1 สคริปต์การขอสิทธิ์และการรับ FCM Token
-    // ==========================================
-    function requestNotificationPermissionAndGetToken() {
-      return new Promise((resolve) => {
-        if (!('Notification' in window)) {
-          console.warn("This browser does not support desktop notifications");
-          resolve(null);
-          return;
-        }
 
-        if (isDemoMode) {
-          // โหมดเดโม: ขอสิทธิ์บราวเซอร์โดยตรง เพื่อจำลองกล่องแจ้งเตือน
-          Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-              resolve("demo_token_" + Math.random().toString(36).substr(2, 9));
-            } else {
-              resolve(null);
-            }
-          });
-          return;
-        }
-
-        if (!messaging) {
-          resolve(null);
-          return;
-        }
-
-        Notification.requestPermission().then((permission) => {
-          if (permission === 'granted') {
-            console.log('Notification permission granted.');
-            messaging.getToken()
-              .then((currentToken) => {
-                if (currentToken) {
-                  console.log('FCM Token received:', currentToken);
-                  resolve(currentToken);
-                } else {
-                  console.warn('No registration token available.');
-                  resolve(null);
-                }
-              })
-              .catch((err) => {
-                console.error('An error occurred while retrieving token. ', err);
-                resolve(null);
-              });
-          } else {
-            console.warn('Notification permission denied.');
-            resolve(null);
-          }
-        });
-      });
-    }
 
     // ==========================================
     // 2.2 สคริปต์การส่งการแจ้งเตือนเจ้าหน้าที่ผ่าน LINE Messaging API
@@ -493,52 +421,200 @@
         return;
       }
 
-      const messageText = `🚨 มีการแจ้งซ่อมใหม่!\n\n• รหัสเสาไฟ: ${reportData.lightCode}\n• ชื่อตำแหน่ง: ${reportData.lightName}\n• ประเภทปัญหา: ${reportData.issueType}\n• รายละเอียด: ${reportData.details || 'ไม่มี'}\n• เบอร์โทรศัพท์ผู้แจ้ง: ${reportData.reporterPhone || 'ไม่ได้ระบุ'}\n\nจัดการงานได้ที่หน้าแดชบอร์ดเจ้าหน้าที่`;
+      // สร้าง Link สำหรับ Dashboard เผื่อกรณีใช้บนมือถือหรือเครื่องทดสอบ
+      const currentUrl = window.location.href;
+      let dashboardUrl = "https://tm-municipal-smartlight.firebaseapp.com/dashboard.html"; // ค่าเริ่มต้นสำหรับโปรดักชั่น
+      if (currentUrl.startsWith("http")) {
+        const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
+        dashboardUrl = `${baseUrl}/dashboard.html`;
+      }
 
-      // ดึงรายชื่อไอดีผู้ติดตามทั้งหมดที่แอดไลน์ OA เป็นเพื่อน
-      const followersUrl = "https://api.line.me/v2/bot/followers/ids";
-      const requestFollowersUrl = lineConfig.useCorsProxy ? (lineConfig.corsProxyUrl + followersUrl) : followersUrl;
-
-      fetch(requestFollowersUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': 'Bearer ' + lineConfig.channelAccessToken
+      const flexMessage = {
+        type: "bubble",
+        styles: {
+          header: {
+            backgroundColor: "#8c0a13"
+          },
+          body: {
+            backgroundColor: "#ffffff"
+          },
+          footer: {
+            backgroundColor: "#f8fafc",
+            separator: true,
+            separatorColor: "#e2e8f0"
+          }
+        },
+        header: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "🚨 มีการแจ้งซ่อมใหม่",
+              weight: "bold",
+              color: "#ffffff",
+              size: "lg"
+            },
+            {
+              type: "text",
+              text: "ระบบไฟถนนอัจฉริยะ เทศบาลตำบลตันหยงมัส",
+              color: "#e8e8e8",
+              size: "xs",
+              margin: "xs"
+            }
+          ]
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          spacing: "md",
+          contents: [
+            {
+              type: "box",
+              layout: "horizontal",
+              contents: [
+                {
+                  type: "text",
+                  text: "รหัสเสาไฟ:",
+                  size: "sm",
+                  color: "#64748b",
+                  flex: 2
+                },
+                {
+                  type: "text",
+                  text: reportData.lightCode,
+                  weight: "bold",
+                  size: "sm",
+                  color: "#0ea5e9",
+                  flex: 4
+                }
+              ]
+            },
+            {
+              type: "box",
+              layout: "horizontal",
+              contents: [
+                {
+                  type: "text",
+                  text: "ประเภทปัญหา:",
+                  size: "sm",
+                  color: "#64748b",
+                  flex: 2
+                },
+                {
+                  type: "text",
+                  text: reportData.issueType,
+                  weight: "bold",
+                  size: "sm",
+                  color: "#ef4444",
+                  flex: 4
+                }
+              ]
+            },
+            {
+              type: "separator",
+              color: "#f1f5f9",
+              margin: "md"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              spacing: "xs",
+              contents: [
+                {
+                  type: "text",
+                  text: "📍 สถานที่/ตำแหน่ง:",
+                  size: "sm",
+                  weight: "bold",
+                  color: "#334155"
+                },
+                {
+                  type: "text",
+                  text: reportData.lightName,
+                  size: "sm",
+                  color: "#475569",
+                  wrap: true
+                }
+              ]
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              spacing: "xs",
+              contents: [
+                {
+                  type: "text",
+                  text: "📝 รายละเอียดเพิ่มเติม:",
+                  size: "sm",
+                  weight: "bold",
+                  color: "#334155"
+                },
+                {
+                  type: "text",
+                  text: reportData.details || "ไม่มีรายละเอียดเพิ่มเติม",
+                  size: "sm",
+                  color: "#475569",
+                  wrap: true
+                }
+              ]
+            },
+            {
+              type: "separator",
+              color: "#f1f5f9",
+              margin: "md"
+            },
+            {
+              type: "box",
+              layout: "horizontal",
+              contents: [
+                {
+                  type: "text",
+                  text: "📞 เบอร์ติดต่อผู้แจ้ง:",
+                  size: "sm",
+                  color: "#64748b",
+                  flex: 2
+                },
+                {
+                  type: "text",
+                  text: reportData.reporterPhone || "ไม่ได้ระบุ",
+                  size: "sm",
+                  color: "#0f172a",
+                  weight: "bold",
+                  flex: 4
+                }
+              ]
+            }
+          ]
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "button",
+              style: "primary",
+              color: "#0ea5e9",
+              action: {
+                type: "uri",
+                label: "📋 ไปยัง Dashboard เจ้าหน้าที่",
+                uri: dashboardUrl
+              }
+            }
+          ]
         }
-      })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error("HTTP status " + response.status);
-        }
-        return response.json();
-      })
-      .then(data => {
-        const userIds = data.userIds || [];
-        if (userIds.length === 0) {
-          console.warn("No followers found for this LINE OA. Please add friend first.");
-          return;
-        }
+      };
 
-        console.log(`Found ${userIds.length} follower(s) to notify.`);
-        sendMulticastMessage(userIds, messageText);
-      })
-      .catch(err => {
-        console.error("Failed to fetch LINE OA followers:", err);
-      });
-    }
-
-    function sendMulticastMessage(userIds, text) {
-      // ส่งด้วย Multicast API ของ LINE (ส่งได้สูงสุดครั้งละ 500 ไอดี)
       const payload = {
-        to: userIds,
         messages: [
           {
-            type: "text",
-            text: text
+            type: "flex",
+            altText: `🚨 แจ้งซ่อมใหม่: ${reportData.lightCode}`,
+            contents: flexMessage
           }
         ]
       };
 
-      const url = "https://api.line.me/v2/bot/message/multicast";
+      const url = "https://api.line.me/v2/bot/message/broadcast";
       const requestUrl = lineConfig.useCorsProxy ? (lineConfig.corsProxyUrl + url) : url;
 
       fetch(requestUrl, {
@@ -549,18 +625,18 @@
         },
         body: JSON.stringify(payload)
       })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error("HTTP status " + response.status);
-        }
-        return response.json();
-      })
-      .then(data => {
-        console.log("LINE Multicast Staff Notification sent successfully:", data);
-      })
-      .catch(err => {
-        console.error("Error sending LINE multicast staff notification:", err);
-      });
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("HTTP status " + response.status);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log("LINE Broadcast Flex Notification sent successfully:", data);
+        })
+        .catch(err => {
+          console.error("Error sending LINE broadcast flex notification:", err);
+        });
     }
 
     // แสดงคำแนะนำการใช้งานในรูปแบบป๊อปอัป SweetAlert2 (โดยเฉพาะบนมือถือ)
@@ -598,10 +674,6 @@
         try {
           firebase.initializeApp(firebaseConfig);
           db = firebase.firestore();
-          // เริ่มต้นระบบ Messaging ถ้าสนับสนุนในเบราว์เซอร์
-          if (firebase.messaging.isSupported()) {
-            messaging = firebase.messaging();
-          }
         } catch (e) {
           console.error("Firebase init failed, switching to Demo Mode", e);
           isDemoMode = true;
@@ -773,20 +845,22 @@
       const badgeClass = light.status === 'working' ? 'badge-working' : light.status === 'pending' ? 'badge-pending' : 'badge-broken';
       document.getElementById('infoStatusBadge').innerHTML = `<span class="badge ${badgeClass}">${statusText}</span>`;
 
-      document.getElementById('generalInstructions').style.display = 'none';
       document.getElementById('reportPanel').style.display = 'block';
 
-      // แสดงแผงเมนูด้านล่างสำหรับมือถือ
-      document.querySelector('.sidebar').classList.add('active');
+      // แสดงแผงเมนูด้านล่างสำหรับมือถือ และแสดงแบบลอยสำหรับ Desktop
+      const sidebar = document.querySelector('.sidebar');
+      sidebar.style.display = 'flex';
+      sidebar.classList.add('active');
     }
 
     function closeReportPanel() {
       document.getElementById('reportPanel').style.display = 'none';
-      document.getElementById('generalInstructions').style.display = 'block';
       document.getElementById('reportForm').reset();
 
-      // ซ่อนแผงเมนูด้านล่างสำหรับมือถือ
-      document.querySelector('.sidebar').classList.remove('active');
+      // ซ่อนแผงเมนูด้านล่างสำหรับมือถือ และซ่อนแบบลอยสำหรับ Desktop
+      const sidebar = document.querySelector('.sidebar');
+      sidebar.style.display = 'none';
+      sidebar.classList.remove('active');
 
       // ลบ Query parameter ออกจากแถบที่อยู่เว็บ
       const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname;
@@ -805,17 +879,14 @@
       const targetLight = allLights.find(l => l.id === lightId);
       if (!targetLight) return;
 
-      // แสดงการโหลดพร้อมขออนุญาตแจ้งเตือน
+      // แสดงการโหลด
       Swal.fire({
         title: 'กำลังบันทึกข้อมูล...',
-        text: 'กรุณาอนุญาตสิทธิ์รับการแจ้งเตือนบนมือถือเมื่อมีป๊อปอัปสอบถาม',
         allowOutsideClick: false,
         didOpen: () => {
           Swal.showLoading();
         }
       });
-
-      const fcmToken = await requestNotificationPermissionAndGetToken();
 
       const reportData = {
         lightId: lightId,
@@ -825,8 +896,7 @@
         details: details,
         reporterPhone: reporterPhone,
         status: 'pending',
-        timestamp: new Date(),
-        fcmToken: fcmToken
+        timestamp: new Date()
       };
 
       if (isDemoMode) {
