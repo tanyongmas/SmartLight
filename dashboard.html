@@ -338,6 +338,150 @@
         height: 600px;
       }
     }
+
+    /* ปรับแต่ง UX/UI สำหรับอุปกรณ์เคลื่อนที่ (Mobile Devices) */
+    @media (max-width: 768px) {
+      .dashboard-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 12px 16px;
+        gap: 12px;
+      }
+
+      .header-logo {
+        flex-direction: column;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .header-logo h2 {
+        font-size: 15px;
+        text-align: center;
+      }
+
+      .user-profile {
+        width: 100%;
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .user-profile button,
+      .user-profile .btn {
+        width: 100%;
+        max-width: 280px;
+        justify-content: center;
+        text-align: center;
+        box-sizing: border-box;
+      }
+
+      .user-email {
+        font-size: 12px;
+        margin-bottom: 2px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        padding: 12px;
+      }
+
+      .stat-card {
+        padding: 12px;
+        gap: 10px;
+        border-radius: 12px;
+      }
+
+      .stat-icon {
+        font-size: 18px;
+        padding: 8px;
+        border-radius: 8px;
+      }
+
+      .stat-info h3 {
+        font-size: 18px;
+      }
+
+      .stat-info p {
+        font-size: 11px;
+      }
+
+      .main-content {
+        height: auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .map-section {
+        height: 350px;
+        order: 1; /* แผนที่อยู่ด้านบน */
+      }
+
+      .control-panel {
+        width: 100%;
+        height: auto;
+        min-height: 400px;
+        max-height: 600px;
+        order: 2; /* รายการแจ้งเสียอยู่ด้านล่างแผนที่ */
+        border-left: none;
+        border-top: 1px solid var(--border-light);
+      }
+
+      #leftDrawer {
+        width: 100% !important;
+        max-width: 100vw !important;
+        height: 100%;
+      }
+
+      /* แผงเมนูลอยแบบ Tab Bar สำหรับมือถือ */
+      #floatingMenuDock {
+        position: fixed;
+        bottom: 12px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 92% !important;
+        max-width: 380px !important;
+        padding: 6px 12px !important;
+        gap: 6px !important;
+        justify-content: space-around !important;
+        border-radius: 20px !important;
+      }
+
+      #floatingMenuDock .dock-btn {
+        flex-direction: column !important;
+        gap: 4px !important;
+        padding: 6px 4px !important;
+        font-size: 10px !important;
+        flex: 1;
+        align-items: center;
+      }
+
+      #floatingMenuDock .dock-btn i {
+        font-size: 16px !important;
+      }
+
+      #floatingMenuDock .dock-btn span {
+        font-size: 9px !important;
+      }
+
+      /* ซ่อนเส้นคั่นระหว่างปุ่มเพื่อประหยัดพื้นที่ */
+      #floatingMenuDock div[style*="width: 1px"] {
+        display: none !important;
+      }
+
+      /* ปรับแต่งความกว้างของโมดัล */
+      .modal-content {
+        width: 92% !important;
+        max-width: 380px !important;
+        padding: 16px !important;
+      }
+
+      #singleStickerContainer {
+        padding: 8px !important;
+        margin-top: 10px !important;
+      }
+    }
   </style>
 </head>
 
@@ -391,15 +535,12 @@
 
     <!-- เมนูบาร์หลัก -->
     <header class="dashboard-header">
-      <div class="header-logo" style="display: flex; align-items: center; gap: 10px;">
+      <div class="header-logo">
         <img src="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png" alt="โลโก้เทศบาล" style="height: 36px; width: auto; object-fit: contain;">
         <h2>ระบบจัดการไฟฟ้า เทศบาลตำบลตันหยงมัส</h2>
       </div>
       <div class="user-profile">
         <span class="user-email" id="staffEmail">staff@municipality.go.th</span>
-        <button class="btn" id="btnLinkLine" onclick="linkLineNotification()" style="padding: 6px 12px; font-size: 12px; background: #06b6d4; color: #fff; border: none; font-weight: 600; border-radius: 6px;">
-          <i class="fa-brands fa-line"></i> เชื่อมต่อ LINE รับแจ้งเตือน
-        </button>
         <button class="btn btn-secondary" onclick="logout()" style="padding: 6px 12px; font-size: 12px;">
           <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
         </button>
@@ -727,9 +868,6 @@
   <!-- QRCode.js Library (CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  <!-- LINE LIFF SDK -->
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
   <script>
     // ==========================================
     // 1. ตั้งค่า Firebase Configuration
@@ -805,21 +943,6 @@
 
       initFirebase();
       initMap();
-
-      // เริ่มต้นตั้งค่า LIFF ตั้งแต่โหลดหน้าเว็บเพื่อดักรับค่า Redirect Callback หลังล็อกอิน
-      if (typeof liff !== 'undefined') {
-        liff.init({ liffId: liffId })
-          .then(() => {
-            if (liff.isLoggedIn()) {
-              console.log("LIFF is logged in on page load.");
-              // ดึงโปรไฟล์และอัปเดตสิทธิ์บันทึกข้อมูลเจ้าหน้าที่เงียบๆ หน้าบ้าน
-              processLiffRegistration(true);
-            }
-          })
-          .catch(err => {
-            console.error("LIFF page load init failed:", err);
-          });
-      }
     });
 
     function initFirebase() {
@@ -914,173 +1037,6 @@
       document.getElementById('loginForm').reset();
     }
 
-    // ==========================================
-    // 2.3 การเชื่อมโยง LINE Messaging API & LIFF
-    // ==========================================
-    const liffId = "2010259257-mqNfRRF9";
-
-    function linkLineNotification() {
-      if (typeof liff === 'undefined') {
-        Swal.fire({
-          title: 'ข้อผิดพลาด',
-          text: 'ไม่สามารถโหลดระบบ LINE SDK ได้สำเร็จ',
-          icon: 'error',
-          confirmButtonText: 'ตกลง'
-        });
-        return;
-      }
-
-      Swal.fire({
-        title: 'กำลังเชื่อมโยง LINE...',
-        text: 'กรุณารอสักครู่ขณะเชื่อมต่อระบบกับ LINE',
-        allowOutsideClick: false,
-        didOpen: () => {
-          Swal.showLoading();
-        }
-      });
-
-      liff.init({ liffId: liffId })
-        .then(() => {
-          if (!liff.isLoggedIn()) {
-            liff.login();
-          } else {
-            processLiffRegistration();
-          }
-        })
-        .catch(err => {
-          console.error("LIFF initialization failed", err);
-          Swal.fire({
-            title: 'เชื่อมต่อ LINE ล้มเหลว',
-            text: 'เกิดข้อผิดพลาดในการโหลดระบบ LIFF: ' + err.message,
-            icon: 'error',
-            confirmButtonText: 'ตกลง',
-            background: '#161c2d',
-            color: '#f3f4f6',
-            confirmButtonColor: '#ef4444'
-          });
-        });
-    }
-
-    function processLiffRegistration(quiet = false) {
-      if (!quiet) {
-        Swal.fire({
-          title: 'กำลังตรวจสอบข้อมูล...',
-          text: 'กรุณารอสักครู่ขณะตรวจสอบความสัมพันธ์เพื่อนของบัญชี LINE OA',
-          allowOutsideClick: false,
-          didOpen: () => {
-            Swal.showLoading();
-          }
-        });
-      }
-
-      Promise.all([
-        liff.getProfile(),
-        liff.getFriendship()
-      ])
-      .then(([profile, friendship]) => {
-        // ตรวจสอบการเพิ่มเพื่อนกับ LINE OA @104tbmci
-        if (!friendship.friendFlag) {
-          if (!quiet) {
-            Swal.fire({
-              title: 'กรุณาเพิ่มเพื่อน LINE OA ก่อน',
-              html: `<div style="text-align: center; font-family: 'Noto Sans Thai', sans-serif;">
-                       <p style="margin-bottom: 12px;">กรุณาเพิ่มเพื่อน LINE OA <strong>@104tbmci</strong> ก่อนเพื่อรับข้อความแจ้งเตือน</p>
-                       <a href="https://line.me/R/ti/p/%40104tbmci" target="_blank" class="btn btn-primary" style="display: inline-block; padding: 8px 16px; font-size: 13px; text-decoration: none; border-radius: 6px; background: #10b981; color: white;">
-                         <i class="fa-solid fa-user-plus"></i> กดเพิ่มเพื่อน @104tbmci
-                       </a>
-                     </div>`,
-              icon: 'warning',
-              confirmButtonText: 'ฉันเพิ่มเพื่อนเรียบร้อยแล้ว',
-              confirmButtonColor: '#0284c7',
-              background: '#ffffff',
-              color: '#0f172a'
-            }).then((result) => {
-              if (result.isConfirmed) {
-                liff.getFriendship().then(newFriendship => {
-                  if (newFriendship.friendFlag) {
-                    saveStaffLineCredentials(profile, false);
-                  } else {
-                    Swal.fire('เกิดข้อผิดพลาด', 'ไม่พบการเพิ่มเพื่อน LINE OA กรุณาลองใหม่อีกครั้ง', 'error');
-                  }
-                });
-              }
-            });
-          }
-          return;
-        }
-
-        saveStaffLineCredentials(profile, quiet);
-      })
-      .catch(err => {
-        console.error("Error retrieving profile/friendship info:", err);
-        if (!quiet) {
-          Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถอ่านโปรไฟล์ไลน์ของคุณได้: ' + err.message, 'error');
-        }
-      });
-    }
-
-    function saveStaffLineCredentials(profile, quiet = false) {
-      const staffLineData = {
-        userId: profile.userId,
-        displayName: profile.displayName,
-        pictureUrl: profile.pictureUrl || '',
-        statusMessage: profile.statusMessage || '',
-        registeredAt: new Date()
-      };
-
-      // อัปเดตสถานะปุ่มในหน้าแดชบอร์ดเพื่อให้เห็นสถานะชัดเจนว่าเชื่อมต่อแล้ว
-      const btnLink = document.getElementById('btnLinkLine');
-      if (btnLink) {
-        btnLink.innerHTML = `<i class="fa-brands fa-line"></i> เชื่อมต่อแล้ว (${profile.displayName})`;
-        btnLink.style.background = "#10b981"; // สีเขียวแสดงสถานะเชื่อมต่อแล้ว
-      }
-
-      if (isDemoMode) {
-        // โหมดเดโม: บันทึกจำลองใน Local Storage
-        const demoStaffChannels = JSON.parse(localStorage.getItem('smart_staff_line_channels')) || [];
-        const existIdx = demoStaffChannels.findIndex(ch => ch.userId === profile.userId);
-        if (existIdx !== -1) {
-          demoStaffChannels[existIdx] = { ...demoStaffChannels[existIdx], ...staffLineData, registeredAt: new Date().toISOString() };
-        } else {
-          demoStaffChannels.push({ ...staffLineData, registeredAt: new Date().toISOString() });
-        }
-        localStorage.setItem('smart_staff_line_channels', JSON.stringify(demoStaffChannels));
-
-        if (!quiet) {
-          Swal.fire({
-            title: 'เชื่อมโยงสำเร็จ! (โหมดเดโม)',
-            text: `ยินดีต้อนรับคุณ ${profile.displayName} ระบบลงทะเบียนจำลองของคุณรับแจ้งเตือนเสร็จเรียบร้อย`,
-            icon: 'success',
-            confirmButtonText: 'ตกลง',
-            confirmButtonColor: '#06b6d4',
-            background: '#161c2d',
-            color: '#f3f4f6'
-          });
-        }
-      } else {
-        // โหมดจริง: บันทึกใน Firestore
-        db.collection('staff_line_channels').doc(profile.userId).set(staffLineData)
-          .then(() => {
-            if (!quiet) {
-              Swal.fire({
-                title: 'เชื่อมโยงระบบสำเร็จ!',
-                text: `ยินดีต้อนรับคุณ ${profile.displayName} ระบบลงทะเบียนรับการแจ้งเตือนงานใหม่ทาง LINE ของคุณเรียบร้อยแล้ว`,
-                icon: 'success',
-                confirmButtonText: 'ตกลง',
-                confirmButtonColor: '#10b981',
-                background: '#161c2d',
-                color: '#f3f4f6'
-              });
-            }
-          })
-          .catch(err => {
-            console.error("Error saving staff line ID:", err);
-            if (!quiet) {
-              Swal.fire('ล้มเหลว', 'เกิดข้อผิดพลาดในการบันทึกข้อมูลเจ้าหน้าที่: ' + err.message, 'error');
-            }
-          });
-      }
-    }
 
     // ==========================================
     // 3. ระบบแผนที่ของแผงควบคุม
