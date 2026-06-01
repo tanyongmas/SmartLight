@@ -397,6 +397,9 @@
       </div>
       <div class="user-profile">
         <span class="user-email" id="staffEmail">staff@municipality.go.th</span>
+        <button class="btn" id="btnLinkLine" onclick="linkLineNotification()" style="padding: 6px 12px; font-size: 12px; background: #06b6d4; color: #fff; border: none; font-weight: 600; border-radius: 6px;">
+          <i class="fa-brands fa-line"></i> เชื่อมต่อ LINE รับแจ้งเตือน
+        </button>
         <button class="btn btn-secondary" onclick="logout()" style="padding: 6px 12px; font-size: 12px;">
           <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
         </button>
@@ -724,6 +727,9 @@
   <!-- QRCode.js Library (CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
+  <!-- LINE LIFF SDK -->
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
   <script>
     // ==========================================
     // 1. ตั้งค่า Firebase Configuration
@@ -737,6 +743,9 @@
       appId: "1:1056211682644:web:7e26d60bd8e55e2e5974c1",
       measurementId: "G-9N8K32KDPM"
     };
+
+    // Firebase Cloud Messaging (FCM) Server Key (Legacy Server Key)
+    const fcmServerKey = "YOUR_FCM_SERVER_KEY";
 
     let db, auth;
     let isDemoMode = false;
@@ -759,6 +768,17 @@
         document.getElementById('loader').style.opacity = 0;
         setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
       }, 600);
+
+      // ลงทะเบียน Service Worker สำหรับ Web Push ในแดชบอร์ดเพื่อให้ทดสอบแจ้งเตือนบนมือถือได้
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('firebase-messaging-sw.js')
+          .then((registration) => {
+            console.log('Dashboard Service Worker registered successfully:', registration);
+          })
+          .catch((error) => {
+            console.error('Dashboard Service Worker registration failed:', error);
+          });
+      }
 
       // ตั้งค่าเดือน/ปีปัจจุบันล่วงหน้าในตัวเลือกรายงาน
       const currentDate = new Date();
@@ -877,6 +897,147 @@
       document.getElementById('dashboardSection').style.display = 'none';
       document.getElementById('loginSection').style.display = 'flex';
       document.getElementById('loginForm').reset();
+    }
+
+    // ==========================================
+    // 2.3 การเชื่อมโยง LINE Messaging API & LIFF
+    // ==========================================
+    const liffId = "2010257650-zLeZKHVD";
+
+    function linkLineNotification() {
+      if (typeof liff === 'undefined') {
+        Swal.fire({
+          title: 'ข้อผิดพลาด',
+          text: 'ไม่สามารถโหลดระบบ LINE SDK ได้สำเร็จ',
+          icon: 'error',
+          confirmButtonText: 'ตกลง'
+        });
+        return;
+      }
+
+      Swal.fire({
+        title: 'กำลังเชื่อมโยง LINE...',
+        text: 'กรุณารอสักครู่ขณะเชื่อมต่อระบบกับ LINE',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      liff.init({ liffId: liffId })
+        .then(() => {
+          if (!liff.isLoggedIn()) {
+            liff.login();
+          } else {
+            processLiffRegistration();
+          }
+        })
+        .catch(err => {
+          console.error("LIFF initialization failed", err);
+          Swal.fire({
+            title: 'เชื่อมต่อ LINE ล้มเหลว',
+            text: 'เกิดข้อผิดพลาดในการโหลดระบบ LIFF: ' + err.message,
+            icon: 'error',
+            confirmButtonText: 'ตกลง',
+            background: '#161c2d',
+            color: '#f3f4f6',
+            confirmButtonColor: '#ef4444'
+          });
+        });
+    }
+
+    function processLiffRegistration() {
+      Promise.all([
+        liff.getProfile(),
+        liff.getFriendship()
+      ])
+      .then(([profile, friendship]) => {
+        // ตรวจสอบการเพิ่มเพื่อนกับ LINE OA @104tbmci
+        if (!friendship.friendFlag) {
+          Swal.fire({
+            title: 'กรุณาเพิ่มเพื่อน LINE OA ก่อน',
+            html: `<div style="text-align: center; font-family: 'Noto Sans Thai', sans-serif;">
+                     <p style="margin-bottom: 12px;">กรุณาเพิ่มเพื่อน LINE OA <strong>@104tbmci</strong> ก่อนเพื่อรับข้อความแจ้งเตือน</p>
+                     <a href="https://line.me/R/ti/p/%40104tbmci" target="_blank" class="btn btn-primary" style="display: inline-block; padding: 8px 16px; font-size: 13px; text-decoration: none; border-radius: 6px; background: #10b981; color: white;">
+                       <i class="fa-solid fa-user-plus"></i> กดเพิ่มเพื่อน @104tbmci
+                     </a>
+                   </div>`,
+            icon: 'warning',
+            confirmButtonText: 'ฉันเพิ่มเพื่อนเรียบร้อยแล้ว',
+            confirmButtonColor: '#0284c7',
+            background: '#ffffff',
+            color: '#0f172a'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              // เช็คสถานะการเพิ่มเพื่อนอีกรอบ
+              liff.getFriendship().then(newFriendship => {
+                if (newFriendship.friendFlag) {
+                  saveStaffLineCredentials(profile);
+                } else {
+                  Swal.fire('เกิดข้อผิดพลาด', 'ไม่พบการเพิ่มเพื่อน LINE OA กรุณาลองใหม่อีกครั้ง', 'error');
+                }
+              });
+            }
+          });
+          return;
+        }
+
+        saveStaffLineCredentials(profile);
+      })
+      .catch(err => {
+        console.error("Error retrieving profile/friendship info:", err);
+        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถอ่านโปรไฟล์ไลน์ของคุณได้: ' + err.message, 'error');
+      });
+    }
+
+    function saveStaffLineCredentials(profile) {
+      const staffLineData = {
+        userId: profile.userId,
+        displayName: profile.displayName,
+        pictureUrl: profile.pictureUrl || '',
+        statusMessage: profile.statusMessage || '',
+        registeredAt: new Date()
+      };
+
+      if (isDemoMode) {
+        // โหมดเดโม: บันทึกจำลองใน Local Storage
+        const demoStaffChannels = JSON.parse(localStorage.getItem('smart_staff_line_channels')) || [];
+        const existIdx = demoStaffChannels.findIndex(ch => ch.userId === profile.userId);
+        if (existIdx !== -1) {
+          demoStaffChannels[existIdx] = { ...demoStaffChannels[existIdx], ...staffLineData, registeredAt: new Date().toISOString() };
+        } else {
+          demoStaffChannels.push({ ...staffLineData, registeredAt: new Date().toISOString() });
+        }
+        localStorage.setItem('smart_staff_line_channels', JSON.stringify(demoStaffChannels));
+
+        Swal.fire({
+          title: 'เชื่อมโยงสำเร็จ! (โหมดเดโม)',
+          text: `ยินดีต้อนรับคุณ ${profile.displayName} ระบบลงทะเบียนจำลองของคุณรับแจ้งเตือนเสร็จเรียบร้อย`,
+          icon: 'success',
+          confirmButtonText: 'ตกลง',
+          confirmButtonColor: '#06b6d4',
+          background: '#161c2d',
+          color: '#f3f4f6'
+        });
+      } else {
+        // โหมดจริง: บันทึกใน Firestore
+        db.collection('staff_line_channels').doc(profile.userId).set(staffLineData)
+          .then(() => {
+            Swal.fire({
+              title: 'เชื่อมโยงระบบสำเร็จ!',
+              text: `ยินดีต้อนรับคุณ ${profile.displayName} ระบบลงทะเบียนรับการแจ้งเตือนงานใหม่ทาง LINE ของคุณเรียบร้อยแล้ว`,
+              icon: 'success',
+              confirmButtonText: 'ตกลง',
+              confirmButtonColor: '#10b981',
+              background: '#161c2d',
+              color: '#f3f4f6'
+            });
+          })
+          .catch(err => {
+            console.error("Error saving staff line ID:", err);
+            Swal.fire('ล้มเหลว', 'เกิดข้อผิดพลาดในการบันทึกข้อมูลเจ้าหน้าที่: ' + err.message, 'error');
+          });
+      }
     }
 
     // ==========================================
@@ -1141,6 +1302,9 @@
       // เมื่อเจ้าหน้าที่กดเปลี่ยนสถานะรายการแจ้งเสีย จะส่งผลต่อเสาไฟด้วย
       const newLightStatus = newStatus === 'resolved' ? 'working' : 'pending';
 
+      // ค้นหาข้อมูลรายงานก่อนที่จะถูกอัปเดตเพื่อดึง fcmToken
+      const report = allReports.find(r => r.id === reportId);
+
       if (isDemoMode) {
         // อัปเดตใน Local Storage
         const localReports = JSON.parse(localStorage.getItem('smart_reports')) || [];
@@ -1159,6 +1323,11 @@
         }
 
         loadData();
+
+        // ส่งแจ้งเตือนพุช
+        if (report) {
+          sendPushNotification(report, newStatus);
+        }
       } else {
         // อัปเดตใน Firestore
         db.collection('reports').doc(reportId).update({
@@ -1168,7 +1337,136 @@
             status: newLightStatus,
             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
           });
+        }).then(() => {
+          // ส่งแจ้งเตือนพุช
+          if (report) {
+            sendPushNotification(report, newStatus);
+          }
         }).catch(err => console.error("Error updating status: ", err));
+      }
+    }
+
+    // ฟังก์ชันส่งการแจ้งเตือนพุช (Web Push Notification)
+    function sendPushNotification(report, newStatus) {
+      if (!report || !report.fcmToken) {
+        console.log("No fcmToken found for this report. Skipping notification.");
+        return;
+      }
+
+      const statusText = newStatus === 'resolved' ? 'ซ่อมเสร็จสิ้น' : 'กำลังดำเนินการ';
+      const lightStatusText = newStatus === 'resolved' ? 'ใช้งานปกติ' : 'กำลังซ่อมแซม';
+      const title = `อัปเดตสถานะเสาไฟ ${report.lightCode}`;
+      const body = `สถานะการดำเนินการ: ${statusText} (${lightStatusText})\nอาการ: ${report.issueType}`;
+      const icon = "https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png";
+
+      const currentUrl = window.location.href;
+      const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
+      const citizenUrl = `${baseUrl}/index.html?lightId=${report.lightId}`;
+
+      console.log(`Sending notification to token: ${report.fcmToken}`);
+
+      if (isDemoMode) {
+        // โหมดเดโม: แสดงการแจ้งเตือนของเบราว์เซอร์โดยตรงหากได้รับการอนุญาต
+        if ('Notification' in window) {
+          if (Notification.permission === 'granted') {
+            showLocalNotification();
+          } else if (Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+              if (permission === 'granted') {
+                showLocalNotification();
+              }
+            });
+          }
+        } else {
+          console.warn("Notification not supported in this browser.");
+          showSwalToast();
+        }
+
+        function showLocalNotification() {
+          // บนมือถือ (Android/Chrome) ไม่อนุญาตให้ใช้ new Notification() ใน Window Context ตรงๆ 
+          // จึงต้องส่งผ่าน Service Worker หรือตรวจสอบเบราว์เซอร์
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(reg => {
+              reg.showNotification(title, {
+                body: body,
+                icon: icon,
+                data: { url: citizenUrl }
+              }).catch(err => {
+                console.error("Service worker showNotification failed, trying fallback:", err);
+                fallbackNotification();
+              });
+            });
+          } else {
+            fallbackNotification();
+          }
+        }
+
+        function fallbackNotification() {
+          try {
+            const notification = new Notification(title, {
+              body: body,
+              icon: icon
+            });
+            notification.onclick = function(e) {
+              e.preventDefault();
+              window.open(citizenUrl, '_blank');
+            };
+          } catch (e) {
+            console.error("Standard Notification constructor failed:", e);
+            showSwalToast();
+          }
+        }
+
+        function showSwalToast() {
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            title: `[จำลองพุช] ${title}: ${body}`,
+            showConfirmButton: false,
+            timer: 4000
+          });
+        }
+      } else {
+        // โหมดใช้งานจริง: ส่งข้อความพุชผ่าน Firebase Cloud Messaging Legacy API
+        if (fcmServerKey === "YOUR_FCM_SERVER_KEY" || !fcmServerKey) {
+          console.warn("FCM Server Key not configured. Skipping FCM API push.");
+          return;
+        }
+
+        const payload = {
+          to: report.fcmToken,
+          notification: {
+            title: title,
+            body: body,
+            icon: icon,
+            click_action: citizenUrl
+          },
+          data: {
+            url: citizenUrl
+          }
+        };
+
+        fetch('https://fcm.googleapis.com/fcm/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'key=' + fcmServerKey
+          },
+          body: JSON.stringify(payload)
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('FCM response status: ' + response.status);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('Successfully sent message via FCM:', data);
+        })
+        .catch(error => {
+          console.error('Error sending message via FCM:', error);
+        });
       }
     }
 
