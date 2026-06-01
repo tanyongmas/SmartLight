@@ -805,6 +805,21 @@
 
       initFirebase();
       initMap();
+
+      // เริ่มต้นตั้งค่า LIFF ตั้งแต่โหลดหน้าเว็บเพื่อดักรับค่า Redirect Callback หลังล็อกอิน
+      if (typeof liff !== 'undefined') {
+        liff.init({ liffId: liffId })
+          .then(() => {
+            if (liff.isLoggedIn()) {
+              console.log("LIFF is logged in on page load.");
+              // ดึงโปรไฟล์และอัปเดตสิทธิ์บันทึกข้อมูลเจ้าหน้าที่เงียบๆ หน้าบ้าน
+              processLiffRegistration(true);
+            }
+          })
+          .catch(err => {
+            console.error("LIFF page load init failed:", err);
+          });
+      }
     });
 
     function initFirebase() {
@@ -946,7 +961,18 @@
         });
     }
 
-    function processLiffRegistration() {
+    function processLiffRegistration(quiet = false) {
+      if (!quiet) {
+        Swal.fire({
+          title: 'กำลังตรวจสอบข้อมูล...',
+          text: 'กรุณารอสักครู่ขณะตรวจสอบความสัมพันธ์เพื่อนของบัญชี LINE OA',
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+      }
+
       Promise.all([
         liff.getProfile(),
         liff.getFriendship()
@@ -954,43 +980,46 @@
       .then(([profile, friendship]) => {
         // ตรวจสอบการเพิ่มเพื่อนกับ LINE OA @104tbmci
         if (!friendship.friendFlag) {
-          Swal.fire({
-            title: 'กรุณาเพิ่มเพื่อน LINE OA ก่อน',
-            html: `<div style="text-align: center; font-family: 'Noto Sans Thai', sans-serif;">
-                     <p style="margin-bottom: 12px;">กรุณาเพิ่มเพื่อน LINE OA <strong>@104tbmci</strong> ก่อนเพื่อรับข้อความแจ้งเตือน</p>
-                     <a href="https://line.me/R/ti/p/%40104tbmci" target="_blank" class="btn btn-primary" style="display: inline-block; padding: 8px 16px; font-size: 13px; text-decoration: none; border-radius: 6px; background: #10b981; color: white;">
-                       <i class="fa-solid fa-user-plus"></i> กดเพิ่มเพื่อน @104tbmci
-                     </a>
-                   </div>`,
-            icon: 'warning',
-            confirmButtonText: 'ฉันเพิ่มเพื่อนเรียบร้อยแล้ว',
-            confirmButtonColor: '#0284c7',
-            background: '#ffffff',
-            color: '#0f172a'
-          }).then((result) => {
-            if (result.isConfirmed) {
-              // เช็คสถานะการเพิ่มเพื่อนอีกรอบ
-              liff.getFriendship().then(newFriendship => {
-                if (newFriendship.friendFlag) {
-                  saveStaffLineCredentials(profile);
-                } else {
-                  Swal.fire('เกิดข้อผิดพลาด', 'ไม่พบการเพิ่มเพื่อน LINE OA กรุณาลองใหม่อีกครั้ง', 'error');
-                }
-              });
-            }
-          });
+          if (!quiet) {
+            Swal.fire({
+              title: 'กรุณาเพิ่มเพื่อน LINE OA ก่อน',
+              html: `<div style="text-align: center; font-family: 'Noto Sans Thai', sans-serif;">
+                       <p style="margin-bottom: 12px;">กรุณาเพิ่มเพื่อน LINE OA <strong>@104tbmci</strong> ก่อนเพื่อรับข้อความแจ้งเตือน</p>
+                       <a href="https://line.me/R/ti/p/%40104tbmci" target="_blank" class="btn btn-primary" style="display: inline-block; padding: 8px 16px; font-size: 13px; text-decoration: none; border-radius: 6px; background: #10b981; color: white;">
+                         <i class="fa-solid fa-user-plus"></i> กดเพิ่มเพื่อน @104tbmci
+                       </a>
+                     </div>`,
+              icon: 'warning',
+              confirmButtonText: 'ฉันเพิ่มเพื่อนเรียบร้อยแล้ว',
+              confirmButtonColor: '#0284c7',
+              background: '#ffffff',
+              color: '#0f172a'
+            }).then((result) => {
+              if (result.isConfirmed) {
+                liff.getFriendship().then(newFriendship => {
+                  if (newFriendship.friendFlag) {
+                    saveStaffLineCredentials(profile, false);
+                  } else {
+                    Swal.fire('เกิดข้อผิดพลาด', 'ไม่พบการเพิ่มเพื่อน LINE OA กรุณาลองใหม่อีกครั้ง', 'error');
+                  }
+                });
+              }
+            });
+          }
           return;
         }
 
-        saveStaffLineCredentials(profile);
+        saveStaffLineCredentials(profile, quiet);
       })
       .catch(err => {
         console.error("Error retrieving profile/friendship info:", err);
-        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถอ่านโปรไฟล์ไลน์ของคุณได้: ' + err.message, 'error');
+        if (!quiet) {
+          Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถอ่านโปรไฟล์ไลน์ของคุณได้: ' + err.message, 'error');
+        }
       });
     }
 
-    function saveStaffLineCredentials(profile) {
+    function saveStaffLineCredentials(profile, quiet = false) {
       const staffLineData = {
         userId: profile.userId,
         displayName: profile.displayName,
@@ -998,6 +1027,13 @@
         statusMessage: profile.statusMessage || '',
         registeredAt: new Date()
       };
+
+      // อัปเดตสถานะปุ่มในหน้าแดชบอร์ดเพื่อให้เห็นสถานะชัดเจนว่าเชื่อมต่อแล้ว
+      const btnLink = document.getElementById('btnLinkLine');
+      if (btnLink) {
+        btnLink.innerHTML = `<i class="fa-brands fa-line"></i> เชื่อมต่อแล้ว (${profile.displayName})`;
+        btnLink.style.background = "#10b981"; // สีเขียวแสดงสถานะเชื่อมต่อแล้ว
+      }
 
       if (isDemoMode) {
         // โหมดเดโม: บันทึกจำลองใน Local Storage
@@ -1010,32 +1046,38 @@
         }
         localStorage.setItem('smart_staff_line_channels', JSON.stringify(demoStaffChannels));
 
-        Swal.fire({
-          title: 'เชื่อมโยงสำเร็จ! (โหมดเดโม)',
-          text: `ยินดีต้อนรับคุณ ${profile.displayName} ระบบลงทะเบียนจำลองของคุณรับแจ้งเตือนเสร็จเรียบร้อย`,
-          icon: 'success',
-          confirmButtonText: 'ตกลง',
-          confirmButtonColor: '#06b6d4',
-          background: '#161c2d',
-          color: '#f3f4f6'
-        });
+        if (!quiet) {
+          Swal.fire({
+            title: 'เชื่อมโยงสำเร็จ! (โหมดเดโม)',
+            text: `ยินดีต้อนรับคุณ ${profile.displayName} ระบบลงทะเบียนจำลองของคุณรับแจ้งเตือนเสร็จเรียบร้อย`,
+            icon: 'success',
+            confirmButtonText: 'ตกลง',
+            confirmButtonColor: '#06b6d4',
+            background: '#161c2d',
+            color: '#f3f4f6'
+          });
+        }
       } else {
         // โหมดจริง: บันทึกใน Firestore
         db.collection('staff_line_channels').doc(profile.userId).set(staffLineData)
           .then(() => {
-            Swal.fire({
-              title: 'เชื่อมโยงระบบสำเร็จ!',
-              text: `ยินดีต้อนรับคุณ ${profile.displayName} ระบบลงทะเบียนรับการแจ้งเตือนงานใหม่ทาง LINE ของคุณเรียบร้อยแล้ว`,
-              icon: 'success',
-              confirmButtonText: 'ตกลง',
-              confirmButtonColor: '#10b981',
-              background: '#161c2d',
-              color: '#f3f4f6'
-            });
+            if (!quiet) {
+              Swal.fire({
+                title: 'เชื่อมโยงระบบสำเร็จ!',
+                text: `ยินดีต้อนรับคุณ ${profile.displayName} ระบบลงทะเบียนรับการแจ้งเตือนงานใหม่ทาง LINE ของคุณเรียบร้อยแล้ว`,
+                icon: 'success',
+                confirmButtonText: 'ตกลง',
+                confirmButtonColor: '#10b981',
+                background: '#161c2d',
+                color: '#f3f4f6'
+              });
+            }
           })
           .catch(err => {
             console.error("Error saving staff line ID:", err);
-            Swal.fire('ล้มเหลว', 'เกิดข้อผิดพลาดในการบันทึกข้อมูลเจ้าหน้าที่: ' + err.message, 'error');
+            if (!quiet) {
+              Swal.fire('ล้มเหลว', 'เกิดข้อผิดพลาดในการบันทึกข้อมูลเจ้าหน้าที่: ' + err.message, 'error');
+            }
           });
       }
     }
