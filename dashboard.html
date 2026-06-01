@@ -51,12 +51,41 @@
     .user-profile {
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-light);
+      padding: 6px 14px;
+      border-radius: 9999px; /* pill box */
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
     .user-email {
       font-size: 13px;
       color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .btn-logout {
+      background: none;
+      border: none;
+      padding: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-fast);
+      font-family: var(--font-family);
+    }
+
+    .btn-logout:hover {
+      transform: scale(1.05);
+    }
+
+    .btn-logout .logout-text {
+      font-size: 12px;
+      color: #ef4444;
+      margin-left: 6px;
+      font-weight: 600;
     }
 
     /* สถิติสรุปภาพรวม */
@@ -342,90 +371,162 @@
     /* ปรับแต่ง UX/UI สำหรับอุปกรณ์เคลื่อนที่ (Mobile Devices) */
     @media (max-width: 768px) {
       .dashboard-header {
-        flex-direction: column;
+        flex-direction: row;
+        justify-content: space-between;
         align-items: center;
-        text-align: center;
-        padding: 12px 16px;
-        gap: 12px;
+        padding: 10px 14px;
+        gap: 8px;
+        height: 56px;
+        box-sizing: border-box;
       }
 
       .header-logo {
-        flex-direction: column;
-        gap: 6px;
+        flex-direction: row;
+        gap: 8px;
         align-items: center;
+        text-align: left;
       }
 
-      .header-logo h2 {
-        font-size: 15px;
-        text-align: center;
+      .header-logo img {
+        height: 28px !important;
+      }
+
+      .header-title-main {
+        font-size: 12px !important;
+        text-align: left;
+        line-height: 1.2;
+        max-width: 170px;
+      }
+
+      .header-title-sub {
+        font-size: 9px !important;
+        text-align: left;
+        line-height: 1.1;
+        max-width: 170px;
+        margin: 1px 0 0 0 !important;
       }
 
       .user-profile {
-        width: 100%;
-        flex-direction: column;
-        gap: 8px;
+        width: auto;
+        flex-direction: row;
+        gap: 6px;
         align-items: center;
       }
 
       .user-profile button,
       .user-profile .btn {
-        width: 100%;
-        max-width: 280px;
+        width: auto;
+        padding: 6px 10px !important;
         justify-content: center;
         text-align: center;
         box-sizing: border-box;
       }
 
+      .logout-text {
+        display: none;
+      }
+
       .user-email {
-        font-size: 12px;
-        margin-bottom: 2px;
+        font-size: 10px;
+        max-width: 70px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin: 0;
+        display: block;
       }
 
       .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-        padding: 12px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        padding: 8px 12px;
+        background: #f1f5f9;
+        height: auto;
       }
 
       .stat-card {
-        padding: 12px;
-        gap: 10px;
-        border-radius: 12px;
+        padding: 8px 6px;
+        gap: 6px;
+        border-radius: 8px;
+        justify-content: center;
       }
 
       .stat-icon {
-        font-size: 18px;
-        padding: 8px;
-        border-radius: 8px;
+        font-size: 13px;
+        padding: 6px;
+        border-radius: 6px;
+        display: none;
+      }
+
+      @media (min-width: 480px) {
+        .stat-icon {
+          display: block;
+        }
+      }
+
+      .stat-info {
+        text-align: center;
       }
 
       .stat-info h3 {
-        font-size: 18px;
+        font-size: 14px;
+        margin: 0;
+        line-height: 1;
       }
 
       .stat-info p {
-        font-size: 11px;
+        font-size: 9px;
+        margin: 2px 0 0 0;
+        white-space: nowrap;
       }
 
       .main-content {
-        height: auto;
         display: flex;
         flex-direction: column;
+        flex-grow: 1;
+        min-height: 0;
+        height: calc(100vh - 56px - 62px);
+        overflow: hidden;
       }
 
       .map-section {
-        height: 350px;
+        flex-grow: 1;
+        min-height: 0;
+        height: 100%;
         order: 1; /* แผนที่อยู่ด้านบน */
       }
 
       .control-panel {
         width: 100%;
-        height: auto;
-        min-height: 400px;
-        max-height: 600px;
+        height: 280px !important;
+        min-height: 280px !important;
+        max-height: 280px !important;
         order: 2; /* รายการแจ้งเสียอยู่ด้านล่างแผนที่ */
         border-left: none;
         border-top: 1px solid var(--border-light);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+
+      .control-panel .tab-content {
+        padding: 10px 10px 15px 10px;
+        overflow-y: auto;
+        flex-grow: 1;
+      }
+
+      .report-card {
+        padding: 10px;
+        margin-bottom: 8px;
+        gap: 4px;
+      }
+
+      .report-card font-size,
+      .report-card button,
+      .report-card .btn {
+        font-size: 11px !important;
+        padding: 4px 6px !important;
       }
 
       #leftDrawer {
@@ -437,7 +538,7 @@
       /* แผงเมนูลอยแบบ Tab Bar สำหรับมือถือ */
       #floatingMenuDock {
         position: fixed;
-        bottom: 12px !important;
+        bottom: 292px !important; /* ย้ายมาลอยอยู่เหนือแผงควบคุม (ความสูง 280px + ระยะห่าง 12px) เพื่อแก้ปัญหาทับปุ่ม */
         left: 50% !important;
         transform: translateX(-50%) !important;
         width: 92% !important;
@@ -536,13 +637,16 @@
     <!-- เมนูบาร์หลัก -->
     <header class="dashboard-header">
       <div class="header-logo">
-        <img src="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png" alt="โลโก้เทศบาล" style="height: 36px; width: auto; object-fit: contain;">
-        <h2>ระบบจัดการไฟฟ้า เทศบาลตำบลตันหยงมัส</h2>
+        <img src="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png" alt="โลโก้เทศบาล" style="height: 42px; width: auto; object-fit: contain;">
+        <div class="header-title-container">
+          <h2 class="header-title-main" style="font-size: 18px; font-weight: 800; color: var(--text-main); margin: 0; line-height: 1.2;">ระบบจัดการไฟฟ้าสาธารณะ</h2>
+          <h3 class="header-title-sub" style="font-size: 13px; font-weight: 600; color: var(--text-muted); margin: 2px 0 0 0; line-height: 1.1;">เทศบาลตำบลตันหยงมัส</h3>
+        </div>
       </div>
       <div class="user-profile">
         <span class="user-email" id="staffEmail">staff@municipality.go.th</span>
-        <button class="btn btn-secondary" onclick="logout()" style="padding: 6px 12px; font-size: 12px;">
-          <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+        <button class="btn-logout" onclick="logout()" title="ออกจากระบบ">
+          <i class="fa-solid fa-right-from-bracket" style="color: #ef4444;"></i> <span class="logout-text">ออกจากระบบ</span>
         </button>
       </div>
     </header>
@@ -750,11 +854,6 @@
 
       <!-- ส่วนแสดงแผนที่อัจฉริยะ -->
       <div class="map-section">
-        <div
-          style="position: absolute; top: 16px; left: 16px; z-index: 1001; background: rgba(255, 255, 255, 0.95); color: var(--text-main); padding: 10px 14px; border-radius: 10px; font-size: 12px; border: 1px solid var(--border-light); box-shadow: 0 4px 12px rgba(0,0,0,0.08); pointer-events: none; display: flex; align-items: center; gap: 8px;">
-          <i class="fa-solid fa-circle-info" style="color:var(--accent-cyan); font-size: 14px;"></i>
-          <span><strong>คำแนะนำ:</strong> กดปุ่ม <strong>เพิ่มเสาไฟใหม่</strong> ด้านล่างก่อน จากนั้นคลิกบนแผนที่เพื่อระบุพิกัดเสาไฟ</span>
-        </div>
         
         <!-- แผงรายงานแจ้งเสียจะแสดงอยู่ตลอดเวลาทางด้านขวา -->
 
@@ -907,16 +1006,7 @@
         setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
       }, 600);
 
-      // ลงทะเบียน Service Worker สำหรับ Web Push ในแดชบอร์ดเพื่อให้ทดสอบแจ้งเตือนบนมือถือได้
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('firebase-messaging-sw.js')
-          .then((registration) => {
-            console.log('Dashboard Service Worker registered successfully:', registration);
-          })
-          .catch((error) => {
-            console.error('Dashboard Service Worker registration failed:', error);
-          });
-      }
+
 
       // ตั้งค่าเดือน/ปีปัจจุบันล่วงหน้าในตัวเลือกรายงาน
       const currentDate = new Date();
@@ -1300,9 +1390,6 @@
       // เมื่อเจ้าหน้าที่กดเปลี่ยนสถานะรายการแจ้งเสีย จะส่งผลต่อเสาไฟด้วย
       const newLightStatus = newStatus === 'resolved' ? 'working' : 'pending';
 
-      // ค้นหาข้อมูลรายงานก่อนที่จะถูกอัปเดตเพื่อดึง fcmToken
-      const report = allReports.find(r => r.id === reportId);
-
       if (isDemoMode) {
         // อัปเดตใน Local Storage
         const localReports = JSON.parse(localStorage.getItem('smart_reports')) || [];
@@ -1321,11 +1408,6 @@
         }
 
         loadData();
-
-        // ส่งแจ้งเตือนพุช
-        if (report) {
-          sendPushNotification(report, newStatus);
-        }
       } else {
         // อัปเดตใน Firestore
         db.collection('reports').doc(reportId).update({
@@ -1335,138 +1417,11 @@
             status: newLightStatus,
             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
           });
-        }).then(() => {
-          // ส่งแจ้งเตือนพุช
-          if (report) {
-            sendPushNotification(report, newStatus);
-          }
         }).catch(err => console.error("Error updating status: ", err));
       }
     }
 
-    // ฟังก์ชันส่งการแจ้งเตือนพุช (Web Push Notification)
-    function sendPushNotification(report, newStatus) {
-      if (!report || !report.fcmToken) {
-        console.log("No fcmToken found for this report. Skipping notification.");
-        return;
-      }
 
-      const statusText = newStatus === 'resolved' ? 'ซ่อมเสร็จสิ้น' : 'กำลังดำเนินการ';
-      const lightStatusText = newStatus === 'resolved' ? 'ใช้งานปกติ' : 'กำลังซ่อมแซม';
-      const title = `อัปเดตสถานะเสาไฟ ${report.lightCode}`;
-      const body = `สถานะการดำเนินการ: ${statusText} (${lightStatusText})\nอาการ: ${report.issueType}`;
-      const icon = "https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png";
-
-      const currentUrl = window.location.href;
-      const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
-      const citizenUrl = `${baseUrl}/index.html?lightId=${report.lightId}`;
-
-      console.log(`Sending notification to token: ${report.fcmToken}`);
-
-      if (isDemoMode) {
-        // โหมดเดโม: แสดงการแจ้งเตือนของเบราว์เซอร์โดยตรงหากได้รับการอนุญาต
-        if ('Notification' in window) {
-          if (Notification.permission === 'granted') {
-            showLocalNotification();
-          } else if (Notification.permission === 'default') {
-            Notification.requestPermission().then(permission => {
-              if (permission === 'granted') {
-                showLocalNotification();
-              }
-            });
-          }
-        } else {
-          console.warn("Notification not supported in this browser.");
-          showSwalToast();
-        }
-
-        function showLocalNotification() {
-          // บนมือถือ (Android/Chrome) ไม่อนุญาตให้ใช้ new Notification() ใน Window Context ตรงๆ 
-          // จึงต้องส่งผ่าน Service Worker หรือตรวจสอบเบราว์เซอร์
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.ready.then(reg => {
-              reg.showNotification(title, {
-                body: body,
-                icon: icon,
-                data: { url: citizenUrl }
-              }).catch(err => {
-                console.error("Service worker showNotification failed, trying fallback:", err);
-                fallbackNotification();
-              });
-            });
-          } else {
-            fallbackNotification();
-          }
-        }
-
-        function fallbackNotification() {
-          try {
-            const notification = new Notification(title, {
-              body: body,
-              icon: icon
-            });
-            notification.onclick = function(e) {
-              e.preventDefault();
-              window.open(citizenUrl, '_blank');
-            };
-          } catch (e) {
-            console.error("Standard Notification constructor failed:", e);
-            showSwalToast();
-          }
-        }
-
-        function showSwalToast() {
-          Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'info',
-            title: `[จำลองพุช] ${title}: ${body}`,
-            showConfirmButton: false,
-            timer: 4000
-          });
-        }
-      } else {
-        // โหมดใช้งานจริง: ส่งข้อความพุชผ่าน Firebase Cloud Messaging Legacy API
-        if (fcmServerKey === "YOUR_FCM_SERVER_KEY" || !fcmServerKey) {
-          console.warn("FCM Server Key not configured. Skipping FCM API push.");
-          return;
-        }
-
-        const payload = {
-          to: report.fcmToken,
-          notification: {
-            title: title,
-            body: body,
-            icon: icon,
-            click_action: citizenUrl
-          },
-          data: {
-            url: citizenUrl
-          }
-        };
-
-        fetch('https://fcm.googleapis.com/fcm/send', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'key=' + fcmServerKey
-          },
-          body: JSON.stringify(payload)
-        })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('FCM response status: ' + response.status);
-          }
-          return response.json();
-        })
-        .then(data => {
-          console.log('Successfully sent message via FCM:', data);
-        })
-        .catch(error => {
-          console.error('Error sending message via FCM:', error);
-        });
-      }
-    }
 
     function deleteReport(reportId) {
       Swal.fire({
