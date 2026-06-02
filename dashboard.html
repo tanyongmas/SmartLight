@@ -4,11 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>แผงควบคุมเจ้าหน้าที่ - เทศบาลอัจฉริยะ</title>
+  <title>แผงควบคุมเจ้าหน้าที่ - เทศบาลตันหยงมัส</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="apple-touch-icon" sizes="180x180" href="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png">
     <link rel="icon" type="image/png" sizes="16x16" href="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png">
+
   <!-- CSS Stylesheet -->
   <link rel="stylesheet" href="style.css">
 
@@ -107,6 +108,15 @@
       display: flex;
       align-items: center;
       gap: 16px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
+      transition: var(--transition-normal);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 20px -8px rgba(15, 23, 42, 0.12);
     }
 
     .stat-icon {
@@ -125,6 +135,107 @@
       font-size: 12px;
       color: var(--text-muted);
       margin-top: 4px;
+    }
+
+    /* สไตล์สีการ์ดสถิติแบบมินิมอลสีอ่อน พร้อม Watermark */
+    .card-watermark {
+      position: absolute;
+      right: -10px;
+      bottom: -15px;
+      font-size: 80px;
+      opacity: 0.08;
+      pointer-events: none;
+      transform: rotate(-15deg);
+      transition: var(--transition-normal);
+    }
+
+    .stat-card:hover .card-watermark {
+      transform: rotate(-5deg) scale(1.05);
+      opacity: 0.12;
+    }
+
+    .stat-card.card-total {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      color: #1e40af;
+      border: 1px solid rgba(59, 130, 246, 0.15);
+    }
+    .stat-card.card-total .stat-icon {
+      background: rgba(59, 130, 246, 0.1) !important;
+      color: #3b82f6 !important;
+    }
+    .stat-card.card-total .stat-info h3 {
+      color: #1e3a8a;
+    }
+    .stat-card.card-total .stat-info p {
+      color: #1d4ed8 !important;
+      font-weight: 500;
+    }
+    .stat-card.card-total .card-watermark {
+      color: #3b82f6;
+    }
+
+    .stat-card.card-working {
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      color: #065f46;
+      border: 1px solid rgba(16, 185, 129, 0.15);
+    }
+    .stat-card.card-working .stat-icon {
+      background: rgba(16, 185, 129, 0.1) !important;
+      color: #10b981 !important;
+    }
+    .stat-card.card-working .stat-info h3 {
+      color: #064e3b;
+    }
+    .stat-card.card-working .stat-info p {
+      color: #047857 !important;
+      font-weight: 500;
+    }
+    .stat-card.card-working .card-watermark {
+      color: #10b981;
+    }
+
+    .stat-card.card-broken {
+      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+      color: #991b1b;
+      border: 1px solid rgba(239, 68, 68, 0.15);
+    }
+    .stat-card.card-broken .stat-icon {
+      background: rgba(239, 68, 68, 0.1) !important;
+      color: #ef4444 !important;
+    }
+    .stat-card.card-broken .stat-info h3 {
+      color: #7f1d1d;
+    }
+    .stat-card.card-broken .stat-info p {
+      color: #b91c1c !important;
+      font-weight: 500;
+    }
+    .stat-card.card-broken .card-watermark {
+      color: #ef4444;
+    }
+
+    .stat-card.card-pending {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      color: #9a3412;
+      border: 1px solid rgba(245, 158, 11, 0.15);
+    }
+    .stat-card.card-pending .stat-icon {
+      background: rgba(245, 158, 11, 0.1) !important;
+      color: #f59e0b !important;
+    }
+    .stat-card.card-pending .stat-info h3 {
+      color: #78350f;
+    }
+    .stat-card.card-pending .stat-info p {
+      color: #b45309 !important;
+      font-weight: 500;
+    }
+    .stat-card.card-pending .card-watermark {
+      color: #f59e0b;
+    }
+
+    .swal2-container {
+      z-index: 15000 !important;
     }
 
     /* โครงสร้างพื้นที่เนื้อหา */
@@ -270,7 +381,7 @@
       inset: 0;
       background: rgba(0, 0, 0, 0.75);
       backdrop-filter: blur(8px);
-      z-index: 1000;
+      z-index: 2000;
       justify-content: center;
       align-items: center;
       padding: 20px;
@@ -300,10 +411,12 @@
     @media print {
       @page {
         size: A4 portrait;
-        margin: 0; /* เคลียร์มาร์จินขอบของบราวเซอร์ออกเพื่อให้เราจัดระยะด้วยหน้า .print-page ได้อย่างแม่นยำ */
+        margin: 0;
+        /* เคลียร์มาร์จินขอบของบราวเซอร์ออกเพื่อให้เราจัดระยะด้วยหน้า .print-page ได้อย่างแม่นยำ */
       }
 
-      html, body {
+      html,
+      body {
         height: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -362,7 +475,8 @@
         align-items: center !important;
         justify-content: center !important;
         box-sizing: border-box !important;
-        height: 100% !important; /* ปล่อยให้ขยายเต็มช่องตาราง */
+        height: 100% !important;
+        /* ปล่อยให้ขยายเต็มช่องตาราง */
       }
     }
 
@@ -479,6 +593,12 @@
         gap: 6px;
         border-radius: 8px;
         justify-content: center;
+      }
+
+      .card-watermark {
+        font-size: 44px !important;
+        right: -8px !important;
+        bottom: -10px !important;
       }
 
       .stat-icon {
@@ -676,7 +796,7 @@
         <div class="header-title-container">
           <h2 class="header-title-main"
             style="font-size: 18px; font-weight: 800; color: var(--text-main); margin: 0; line-height: 1.2;">
-            ระบบจัดการไฟฟ้าสาธารณะ</h2>
+            Dashboard ระบบแจ้งซ่อมปัญหาไฟฟ้า</h2>
           <h3 class="header-title-sub"
             style="font-size: 13px; font-weight: 600; color: var(--text-muted); margin: 2px 0 0 0; line-height: 1.1;">
             เทศบาลตำบลตันหยงมัส</h3>
@@ -693,37 +813,37 @@
 
     <!-- บล็อกแสดงข้อมูลสถิติรวม -->
     <section class="stats-grid">
-      <div class="stat-card glass-panel">
-        <i class="fa-solid fa-lightbulb stat-icon"
-          style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);"></i>
+      <div class="stat-card card-total">
+        <i class="fa-solid fa-lightbulb stat-icon"></i>
         <div class="stat-info">
           <h3 id="statTotal">0</h3>
           <p>หลอดไฟทั้งหมด</p>
         </div>
+        <i class="fa-solid fa-lightbulb card-watermark"></i>
       </div>
-      <div class="stat-card glass-panel">
-        <i class="fa-solid fa-circle-check stat-icon"
-          style="background: rgba(16, 185, 129, 0.1); color: var(--color-success);"></i>
+      <div class="stat-card card-working">
+        <i class="fa-solid fa-circle-check stat-icon"></i>
         <div class="stat-info">
           <h3 id="statWorking">0</h3>
           <p>ใช้งานได้ปกติ</p>
         </div>
+        <i class="fa-solid fa-circle-check card-watermark"></i>
       </div>
-      <div class="stat-card glass-panel">
-        <i class="fa-solid fa-circle-exclamation stat-icon"
-          style="background: rgba(239, 68, 68, 0.1); color: var(--color-danger);"></i>
+      <div class="stat-card card-broken">
+        <i class="fa-solid fa-circle-exclamation stat-icon"></i>
         <div class="stat-info">
           <h3 id="statBroken">0</h3>
           <p>ชำรุด/ไฟดับ</p>
         </div>
+        <i class="fa-solid fa-circle-exclamation card-watermark"></i>
       </div>
-      <div class="stat-card glass-panel">
-        <i class="fa-solid fa-screwdriver-wrench stat-icon"
-          style="background: rgba(245, 158, 11, 0.1); color: var(--color-warning);"></i>
+      <div class="stat-card card-pending">
+        <i class="fa-solid fa-screwdriver-wrench stat-icon"></i>
         <div class="stat-info">
           <h3 id="statPending">0</h3>
           <p>กำลังรอดำเนินการ</p>
         </div>
+        <i class="fa-solid fa-screwdriver-wrench card-watermark"></i>
       </div>
     </section>
 
@@ -2057,11 +2177,11 @@
       const chunkSize = 4;
       for (let i = 0; i < printQueue.length; i += chunkSize) {
         const chunk = printQueue.slice(i, i + chunkSize);
-        
+
         // สร้างคอนเทนเนอร์หน้าพิมพ์ (Page)
         const pageDiv = document.createElement('div');
         pageDiv.className = 'print-page';
-        
+
         chunk.forEach(id => {
           const light = allLights.find(l => l.id === id);
           if (light) {
