@@ -1227,7 +1227,7 @@
     }
 
     function checkFriendshipStatus() {
-      if (typeof liff !== 'undefined' && liff.isInClient()) {
+      if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
         liff.getFriendship()
           .then(data => {
             console.log("LINE Friendship Status:", data);
@@ -1892,8 +1892,8 @@
         const targetLight = allLights.find(l => l.id === lightId);
         if (!targetLight) return;
 
-        // ตรวจสอบสถานะการเพิ่มเพื่อนใน LINE (เฉพาะตอนรันในแอป LINE จริง)
-        if (typeof liff !== 'undefined' && liff.isInClient()) {
+        // ตรวจสอบสถานะการเพิ่มเพื่อนใน LINE
+        if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
           try {
             const friendship = await liff.getFriendship();
             if (!friendship.friendFlag) {
