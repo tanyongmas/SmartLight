@@ -1805,40 +1805,19 @@
           layout: "horizontal",
           spacing: "md",
           contents: [
-            // ส่วนที่ 1: เส้นแนวตั้งและจุดกลม (ซ้าย)
+            // ส่วนที่ 1: สถานะ Emoji (ซ้าย)
             {
               type: "box",
               layout: "vertical",
-              width: "16px",
+              width: "24px",
               alignItems: "center",
+              justifyContent: "center",
               contents: [
-                // เส้นบนเชื่อมจุด (ยกเว้นตัวแรกสุด)
                 {
-                  type: "box",
-                  layout: "vertical",
-                  width: "2px",
-                  height: "8px",
-                  backgroundColor: idx > 0 ? "#e2e8f0" : "#ffffff",
-                  contents: [{ type: "filler" }]
-                },
-                // จุดกลมของสถานะ
-                {
-                  type: "box",
-                  layout: "vertical",
-                  width: "12px",
-                  height: "12px",
-                  cornerRadius: "6px",
-                  backgroundColor: dotColor,
-                  contents: [{ type: "filler" }]
-                },
-                // เส้นล่างเชื่อมจุดต่อไป (ยกเว้นตัวท้ายสุด)
-                {
-                  type: "box",
-                  layout: "vertical",
-                  width: "2px",
-                  flex: 1,
-                  backgroundColor: !isLast ? "#e2e8f0" : "#ffffff",
-                  contents: [{ type: "filler" }]
+                  type: "text",
+                  text: hist.status === 'resolved' ? "🟢" : hist.status === 'in_progress' ? "🟡" : "🔴",
+                  size: "sm",
+                  align: "center"
                 }
               ]
             },
@@ -2025,8 +2004,11 @@
         },
         body: JSON.stringify(payload)
       })
-        .then(response => {
-          if (!response.ok) throw new Error("HTTP status " + response.status);
+        .then(async response => {
+          if (!response.ok) {
+            const errText = await response.text();
+            throw new Error("HTTP status " + response.status + ": " + errText);
+          }
           return response.json();
         })
         .then(data => console.log("LINE push notification sent to citizen:", data))
