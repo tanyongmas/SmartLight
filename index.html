@@ -560,15 +560,10 @@
         setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
       }, 600);
 
-
-
       initFirebase();
       initMap();
       loadLights();
       initLiff();
-
-      // แสดงป๊อปอัปคำแนะนำขั้นตอนการแจ้งซ่อมไฟฟ้าเมื่อเข้าหน้าเว็บ
-      setTimeout(showHelpPopup, 1000);
     });
 
 
@@ -1126,6 +1121,8 @@
     function initLiff() {
       if (typeof liff === 'undefined') {
         console.warn("LINE LIFF SDK is not loaded.");
+        // ถ้ารันไม่ได้เลย (ไม่มี SDK) ให้แสดง Help Popup ตามปกติ
+        setTimeout(showHelpPopup, 1000);
         return;
       }
       liff.init({ liffId: liffConfig.liffId })
@@ -1155,6 +1152,8 @@
               console.log("Local testing detected. Skipping auto-login redirect.");
               loadUserReports();
               checkUrlParams();
+              // สำหรับการรันแบบ Local Testing / Web ทั่วไป ค่อยแสดง Help Popup ตามปกติ
+              setTimeout(showHelpPopup, 1000);
             }
           }
         })
@@ -1163,6 +1162,8 @@
           // If LIFF fails (e.g. offline/blocked), still load local reports so the page doesn't hang
           loadUserReports();
           checkUrlParams();
+          // โหลดล้มเหลว ให้แสดง Help Popup ตามปกติ
+          setTimeout(showHelpPopup, 1000);
         });
     }
 
@@ -1191,9 +1192,19 @@
                   });
                 }
               });
+            } else {
+              // ถ้าตรวจสอบว่าเป็นเพื่อนกันอยู่แล้ว ค่อยแสดง Help Popup แนะนำวิธีใช้งานแจ้งซ่อม
+              setTimeout(showHelpPopup, 500);
             }
           })
-          .catch(err => console.error("Error checking friendship status:", err));
+          .catch(err => {
+            console.error("Error checking friendship status:", err);
+            // หากตรวจสอบล้มเหลว ให้แสดง Help Popup สำรองตามปกติ
+            setTimeout(showHelpPopup, 500);
+          });
+      } else {
+        // ถ้ารันอยู่นอก LINE Client (เช่น เปิดผ่านเบราว์เซอร์ปกติหรือสำหรับการทดสอบ) ให้แสดง Help Popup ตามปกติ
+        setTimeout(showHelpPopup, 1000);
       }
     }
 
