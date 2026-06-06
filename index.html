@@ -961,14 +961,31 @@
                       type: "box",
                       layout: "vertical",
                       width: "24px",
-                      alignItems: "center",
-                      justifyContent: "center",
                       contents: [
+                        // เส้นแนวตั้ง (เนื่องจากมีรายการเดียว ให้เส้นเริ่มจากตรงกลางลงไปด้านล่าง)
                         {
-                          type: "text",
-                          text: "🟢",
-                          size: "sm",
-                          align: "center"
+                          type: "box",
+                          layout: "vertical",
+                          width: "2px",
+                          backgroundColor: "#cbd5e1",
+                          position: "absolute",
+                          top: "12px",
+                          bottom: "0px",
+                          left: "11px",
+                          contents: [{ type: "text", text: " ", size: "xxs" }]
+                        },
+                        // จุดสถานะวงกลม
+                        {
+                          type: "box",
+                          layout: "vertical",
+                          width: "12px",
+                          height: "12px",
+                          cornerRadius: "xxl",
+                          backgroundColor: "#16a34a",
+                          position: "absolute",
+                          top: "6px",
+                          left: "6px",
+                          contents: [{ type: "text", text: " ", size: "xxs" }]
                         }
                       ]
                     },
