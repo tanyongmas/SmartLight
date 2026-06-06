@@ -1758,9 +1758,14 @@
         statusNote = 'ดำเนินการเปลี่ยนหลอดไฟ/ซ่อมโคมไฟสำเร็จ ไฟฟ้าสาธารณะส่องสว่างปกติแล้ว';
       }
 
+      // ใช้ลิ้งค์ LINE LIFF เสมอเพื่อให้ประชาชนกดเปิดประวัติการแจ้งซ่อมได้ภายในห้องแชท LINE ทันที (Traffy Fondue style)
+      // และป้องกันความผิดพลาดกรณีเปิดไฟล์ทดสอบผ่านสคีม file:/// ซึ่งจะถูก LINE API ปฏิเสธการส่งข้อความด้วยรหัส 400 Bad Request
+      let citizenUrl = "https://liff.line.me/2010313933-7q4q3WSR?page=track";
       const currentUrl = window.location.href;
-      const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
-      const citizenUrl = `${baseUrl}/index.html?page=track`;
+      if (currentUrl.startsWith("http") && !currentUrl.includes("localhost") && !currentUrl.includes("127.0.0.1")) {
+        const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
+        citizenUrl = `${baseUrl}/index.html?page=track`;
+      }
 
       const payload = {
         to: targetUserId,
