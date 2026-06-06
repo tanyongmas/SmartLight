@@ -529,11 +529,12 @@
       measurementId: "G-9N8K32KDPM"
     };
 
-    // LINE Messaging API Configuration for Staff Notifications
+    // LINE Messaging API Configuration for Notifications
     const lineConfig = {
-      channelAccessToken: "44fvkGxNSGRGHt8ALVm5Cy3gKqnaLv9/IN2madluzOBhlt9EwBerGZtEt9JsPVPIItnhj/kN9omQAirCO90T0t2fMqWxV4/Qmiv1pTporI88Uv7kXtlEURCo7A8Om6xSK48UwD8BZYJW8oHQfLbQXQdB04t89/1O/w1cDnyilFU=", // รหัส Access Token ของเจ้าหน้าที่
+      staffAccessToken: "44fvkGxNSGRGHt8ALVm5Cy3gKqnaLv9/IN2madluzOBhlt9EwBerGZtEt9JsPVPIItnhj/kN9omQAirCO90T0t2fMqWxV4/Qmiv1pTporI88Uv7kXtlEURCo7A8Om6xSK48UwD8BZYJW8oHQfLbQXQdB04t89/1O/w1cDnyilFU=",   // สำหรับแจ้งเตือนเจ้าหน้าที่
+      citizenAccessToken: "HXo5F5nDkmlfp92CgBw5BEaZRVJf0Ux5RD9HeU5TJTV0OuiolmziudguZ2EZO6VQ/nWCrEPIoxcEg8n6x2epOsurF5P5V5ss5IIYsBjCTudfds7HgKnVBArFyqkIBeqgfJw4hIUu9MARGZJxJmsRJwdB04t89/1O/w1cDnyilFU=",  // สำหรับแจ้งเตือนประชาชน
       useCorsProxy: true,                                 // ใช้ CORS Proxy สำหรับการทดสอบจากหน้าบ้าน
-      corsProxyUrl: "https://corsproxy.io/?"             // บริการ Proxy ฟรี (ไม่ต้องเปิดหน้าเว็บปลดล็อกก่อนใช้งาน)
+      corsProxyUrl: "https://corsproxy.io/?"             // บริการ Proxy ฟรี
     };
 
     // LINE LIFF Configuration
@@ -576,7 +577,7 @@
     // 2.2 สคริปต์การส่งการแจ้งเตือนเจ้าหน้าที่ผ่าน LINE Messaging API
     // ==========================================
     function sendLineStaffNotification(reportData) {
-      if (lineConfig.channelAccessToken === "YOUR_LINE_CHANNEL_ACCESS_TOKEN" || lineConfig.channelAccessToken === "") {
+      if (lineConfig.staffAccessToken === "YOUR_LINE_CHANNEL_ACCESS_TOKEN" || lineConfig.staffAccessToken === "") {
         console.warn("LINE Messaging API Channel Access Token is missing. Skipping notification.");
         return;
       }
@@ -796,7 +797,7 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + lineConfig.channelAccessToken
+          'Authorization': 'Bearer ' + lineConfig.staffAccessToken
         },
         body: JSON.stringify(payload)
       })
@@ -812,6 +813,275 @@
         .catch(err => {
           console.error("Error sending LINE broadcast flex notification:", err);
         });
+    }
+
+    // ฟังก์ชันส่งข้อความ Flex Message แจ้งประชาชนว่า "ได้รับข้อมูลการแจ้งซ่อมเรียบร้อยแล้ว" ทันทีที่กดส่งรายงาน
+    function sendLineCitizenSubmitNotification(reportData) {
+      const targetUserId = reportData.lineUserId;
+      if (!targetUserId || targetUserId.startsWith("MOCK_")) {
+        console.log("No real lineUserId or mock user. Skipping citizen notification.");
+        return;
+      }
+
+      const citizenUrl = "https://liff.line.me/2010313933-7q4q3WSR?page=track";
+
+      const flexMessage = {
+        type: "bubble",
+        styles: {
+          header: {
+            backgroundColor: "#16a34a"
+          },
+          body: {
+            backgroundColor: "#ffffff"
+          },
+          footer: {
+            backgroundColor: "#f8fafc",
+            separator: true,
+            separatorColor: "#e2e8f0"
+          }
+        },
+        header: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "✅ ส่งข้อมูลแจ้งซ่อมสำเร็จ",
+              weight: "bold",
+              color: "#ffffff",
+              size: "md"
+            },
+            {
+              type: "text",
+              text: "ระบบแจ้งซ่อมไฟถนน เทศบาลตำบลตันหยงมัส",
+              color: "#e8e8e8",
+              size: "xs",
+              margin: "xs"
+            }
+          ]
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          spacing: "md",
+          contents: [
+            {
+              type: "box",
+              layout: "horizontal",
+              contents: [
+                {
+                  type: "text",
+                  text: "รหัสเสาไฟ:",
+                  size: "sm",
+                  color: "#64748b",
+                  flex: 2
+                },
+                {
+                  type: "text",
+                  text: reportData.lightCode,
+                  weight: "bold",
+                  size: "sm",
+                  color: "#0ea5e9",
+                  flex: 4
+                }
+              ]
+            },
+            {
+              type: "box",
+              layout: "horizontal",
+              contents: [
+                {
+                  type: "text",
+                  text: "ประเภทปัญหา:",
+                  size: "sm",
+                  color: "#64748b",
+                  flex: 2
+                },
+                {
+                  type: "text",
+                  text: reportData.issueType,
+                  weight: "bold",
+                  size: "sm",
+                  color: "#ef4444",
+                  flex: 4
+                }
+              ]
+            },
+            {
+              type: "separator",
+              color: "#f1f5f9",
+              margin: "md"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              spacing: "xs",
+              contents: [
+                {
+                  type: "text",
+                  text: "📍 สถานที่/ตำแหน่ง:",
+                  size: "sm",
+                  weight: "bold",
+                  color: "#334155"
+                },
+                {
+                  type: "text",
+                  text: reportData.lightName,
+                  size: "sm",
+                  color: "#475569",
+                  wrap: true
+                }
+              ]
+            },
+            {
+              type: "separator",
+              color: "#f1f5f9",
+              margin: "md"
+            },
+            {
+              type: "text",
+              text: "📍 ไทม์ไลน์การดำเนินงาน:",
+              size: "sm",
+              weight: "bold",
+              color: "#0f172a",
+              margin: "sm"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              spacing: "none",
+              margin: "xs",
+              contents: [
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  spacing: "md",
+                  contents: [
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      width: "16px",
+                      alignItems: "center",
+                      contents: [
+                        {
+                          type: "box",
+                          layout: "vertical",
+                          width: "12px",
+                          height: "12px",
+                          cornerRadius: "6px",
+                          backgroundColor: "#16a34a"
+                        },
+                        {
+                          type: "box",
+                          layout: "vertical",
+                          width: "2px",
+                          flex: 1,
+                          backgroundColor: "#ffffff"
+                        }
+                      ]
+                    },
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      flex: 1,
+                      contents: [
+                        {
+                          type: "text",
+                          text: "ส่งข้อมูลแจ้งซ่อมสำเร็จ",
+                          weight: "bold",
+                          size: "sm",
+                          color: "#0f172a"
+                        },
+                        {
+                          type: "text",
+                          text: new Date().toLocaleDateString('th-TH', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) + ' น.',
+                          size: "xs",
+                          color: "#94a3b8",
+                          margin: "xs"
+                        },
+                        {
+                          type: "text",
+                          text: "ระบบได้รับแจ้งเรื่องไฟฟ้าสาธารณะชำรุดเรียบร้อยแล้ว ช่างไฟฟ้าจะเข้าดำเนินการตรวจสอบและพิกัดเสาไฟ",
+                          size: "xs",
+                          color: "#475569",
+                          wrap: true,
+                          margin: "xs"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "button",
+              style: "primary",
+              color: "#0ea5e9",
+              action: {
+                type: "uri",
+                label: "🔍 ติดตามสถานะการซ่อม",
+                uri: citizenUrl
+              }
+            }
+          ]
+        }
+      };
+
+      const payload = {
+        to: targetUserId,
+        messages: [
+          {
+            type: "flex",
+            altText: `✅ ส่งข้อมูลแจ้งซ่อมสำเร็จ: ${reportData.lightCode}`,
+            contents: flexMessage
+          }
+        ]
+      };
+
+      // แนบรูปภาพแรกใน Flex Message (หากมี)
+      if (reportData.images && reportData.images.length > 0 && reportData.images[0].startsWith('http')) {
+        flexMessage.hero = {
+          type: "image",
+          url: reportData.images[0],
+          size: "full",
+          aspectRatio: "20:13",
+          aspectMode: "cover",
+          action: {
+            type: "uri",
+            uri: reportData.images[0]
+          }
+        };
+      }
+
+      const url = "https://api.line.me/v2/bot/message/push";
+      const requestUrl = lineConfig.useCorsProxy ? (lineConfig.corsProxyUrl + url) : url;
+
+      fetch(requestUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + lineConfig.citizenAccessToken
+        },
+        body: JSON.stringify(payload)
+      })
+        .then(response => {
+          if (!response.ok) throw new Error("HTTP status " + response.status);
+          return response.json();
+        })
+        .then(data => console.log("LINE push notification sent to citizen upon submission:", data))
+        .catch(err => console.error("Error sending LINE notification to citizen upon submission:", err));
     }
 
     // แสดงคำแนะนำการใช้งานในรูปแบบป๊อปอัป SweetAlert2 (โดยเฉพาะบนมือถือ)
@@ -1557,8 +1827,9 @@
             localReports.push({ id: 'REP_' + Math.random().toString(36).substr(2, 9), ...reportData });
             localStorage.setItem('smart_reports', JSON.stringify(localReports));
 
-            // ส่งการแจ้งเตือนเจ้าหน้าที่ผ่าน LINE Messaging API
+            // ส่งการแจ้งเตือนเจ้าหน้าที่และประชาชนผ่าน LINE Messaging API
             sendLineStaffNotification(reportData);
+            sendLineCitizenSubmitNotification(reportData);
 
             Swal.fire({
               title: 'ส่งรายงานสำเร็จ!',
@@ -1616,8 +1887,9 @@
 
             await docRef.set(reportData);
 
-            // ส่งการแจ้งเตือนเจ้าหน้าที่ผ่าน LINE Messaging API
+            // ส่งการแจ้งเตือนเจ้าหน้าที่และประชาชนผ่าน LINE Messaging API
             sendLineStaffNotification(reportData);
+            sendLineCitizenSubmitNotification(reportData);
 
             // อัปเดตสถานะของไฟตัวนั้นเป็น 'broken' ในฐานข้อมูล
             await db.collection('lights').doc(lightId).update({
