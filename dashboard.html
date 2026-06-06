@@ -1818,9 +1818,9 @@
                   width: "2px",
                   backgroundColor: "#cbd5e1",
                   position: "absolute",
-                  top: idx === 0 ? "12px" : "0px",
-                  bottom: isLast ? "12px" : "0px",
-                  left: "11px",
+                  offsetTop: idx === 0 ? "12px" : "0px",
+                  offsetBottom: isLast ? "12px" : "0px",
+                  offsetStart: "11px",
                   contents: [{ type: "text", text: " ", size: "xxs" }]
                 },
                 // จุดสถานะวงกลม
@@ -1832,8 +1832,8 @@
                   cornerRadius: "xxl",
                   backgroundColor: dotColor,
                   position: "absolute",
-                  top: "6px",
-                  left: "6px",
+                  offsetTop: "6px",
+                  offsetStart: "6px",
                   contents: [{ type: "text", text: " ", size: "xxs" }]
                 }
               ]
