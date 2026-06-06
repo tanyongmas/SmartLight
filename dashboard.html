@@ -1793,13 +1793,13 @@
       const timelineContents = sortedHistory.map((hist, idx) => {
         let dotColor = "#cbd5e1"; // สีเทา (สถานะก่อนหน้า)
         let isLast = idx === sortedHistory.length - 1;
-        
+
         if (hist.status === 'pending' || hist.status === 'broken') dotColor = "#dc2626"; // สีแดง
         else if (hist.status === 'in_progress') dotColor = "#d97706";                    // สีส้ม
         else if (hist.status === 'resolved') dotColor = "#16a34a";                       // สีเขียว
 
         const histTime = formatTime(hist.timestamp);
-        
+
         const itemBox = {
           type: "box",
           layout: "horizontal",
