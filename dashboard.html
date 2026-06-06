@@ -2312,10 +2312,9 @@
       // อัปเดตสถานะปุ่มใน Modal
       updateModalQueueButton();
 
-      // สร้าง URL สำหรับชี้ไปหา index.html ของประชาชน พร้อม parameter รหัสเสาไฟ
-      const currentUrl = window.location.href;
-      const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
-      const citizenUrl = `${baseUrl}/index.html?lightId=${light.id}`;
+      // สร้าง URL สำหรับชี้ไปหา LINE LIFF ของประชาชน พร้อม parameter รหัสเสาไฟ
+      // เพื่อสนับสนุนระบบตรวจจับความสัมพันธ์เพื่อน (Bot Link) และส่งตัวแปรไปยังหน้ารายงานของเสาไฟต้นนั้นทันที
+      const citizenUrl = `https://liff.line.me/2010313933-7q4q3WSR?lightId=${light.id}`;
 
       // รีเซ็ตพื้นที่ก่อนสร้างคิวอาร์โค้ดใหม่
       document.getElementById('qrcode').innerHTML = '';
@@ -2370,7 +2369,7 @@
       const light = allLights.find(l => l.id === activeModalLightId);
 
       if (light) {
-        const citizenUrl = `${baseUrl}/index.html?lightId=${light.id}`;
+        const citizenUrl = `https://liff.line.me/2010313933-7q4q3WSR?lightId=${light.id}`;
 
         const pageDiv = document.createElement('div');
         pageDiv.className = 'print-page';
@@ -2562,7 +2561,7 @@
         chunk.forEach(id => {
           const light = allLights.find(l => l.id === id);
           if (light) {
-            const citizenUrl = `${baseUrl}/index.html?lightId=${light.id}`;
+            const citizenUrl = `https://liff.line.me/2010313933-7q4q3WSR?lightId=${light.id}`;
 
             const card = document.createElement('div');
             card.className = 'print-sticker-card';
@@ -2605,7 +2604,7 @@
         chunk.forEach(id => {
           const light = allLights.find(l => l.id === id);
           if (light) {
-            const citizenUrl = `${baseUrl}/index.html?lightId=${light.id}`;
+            const citizenUrl = `https://liff.line.me/2010313933-7q4q3WSR?lightId=${light.id}`;
             new QRCode(document.getElementById(`bulk-qr-${light.id}`), {
               text: citizenUrl,
               width: 150,
