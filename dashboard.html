@@ -1818,7 +1818,8 @@
                   layout: "vertical",
                   width: "2px",
                   height: "8px",
-                  backgroundColor: idx > 0 ? "#e2e8f0" : "#ffffff"
+                  backgroundColor: idx > 0 ? "#e2e8f0" : "#ffffff",
+                  contents: [{ type: "filler" }]
                 },
                 // จุดกลมของสถานะ
                 {
@@ -1827,7 +1828,8 @@
                   width: "12px",
                   height: "12px",
                   cornerRadius: "6px",
-                  backgroundColor: dotColor
+                  backgroundColor: dotColor,
+                  contents: [{ type: "filler" }]
                 },
                 // เส้นล่างเชื่อมจุดต่อไป (ยกเว้นตัวท้ายสุด)
                 {
@@ -1835,7 +1837,8 @@
                   layout: "vertical",
                   width: "2px",
                   flex: 1,
-                  backgroundColor: !isLast ? "#e2e8f0" : "#ffffff"
+                  backgroundColor: !isLast ? "#e2e8f0" : "#ffffff",
+                  contents: [{ type: "filler" }]
                 }
               ]
             },
