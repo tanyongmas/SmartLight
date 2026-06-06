@@ -922,8 +922,9 @@
             container.innerHTML = '<p style="color: var(--color-danger); text-align: center; font-size: 12px; margin-top: 20px;">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
           });
       }
+    }
 
-      function renderMyReports(reports) {
+    function renderMyReports(reports) {
         const container = document.getElementById('userReportsList');
         if (!container) return;
 
@@ -1029,6 +1030,19 @@
           hour: '2-digit',
           minute: '2-digit'
         }) + ' น.';
+      }
+
+      function viewReportImage(imgUrl) {
+        Swal.fire({
+          imageUrl: imgUrl,
+          imageAlt: 'รูปภาพแจ้งซ่อม',
+          showConfirmButton: false,
+          showCloseButton: true,
+          width: 'auto',
+          maxWidth: '90%',
+          background: '#161c2d',
+          color: '#f3f4f6'
+        });
       }
 
       function initFirebase() {
