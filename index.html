@@ -1189,13 +1189,18 @@
       liff.init({ liffId: liffConfig.liffId })
         .then(() => {
           if (liff.isLoggedIn()) {
+            // โหลดข้อมูล รายงาน พารามิเตอร์ และตรวจสอบสถานะความเป็นเพื่อนก่อน โดยไม่บล็อกเนื่องจากการดึง profile แบบ async
+            loadUserReports();
+            checkUrlParams();
+            checkFriendshipStatus();
+
             liff.getProfile().then(profile => {
               userLineProfile = profile;
               console.log("LINE Profile loaded:", profile);
-              loadUserReports();
-              checkUrlParams();
-              checkFriendshipStatus(); // ตรวจสอบความสัมพันธ์เพื่อนทันทีเมื่อโหลดโปรไฟล์สำเร็จ
-            }).catch(err => console.error("Error getting profile:", err));
+              loadUserReports(); // อัปเดตตารางรายงานให้ตรงกับ User จริงอีกครั้ง
+            }).catch(err => {
+              console.error("Error getting profile:", err);
+            });
           } else {
             // Auto-login inside LINE or non-localhost, but NOT for local files (file://) or local network IPs
             const isLocalFile = window.location.protocol === 'file:';
@@ -1211,9 +1216,61 @@
               liff.login();
             } else {
               console.log("Local testing detected. Skipping auto-login redirect.");
-              loadUserReports();
-              checkUrlParams();
-              updateFriendshipUI(null);
+              
+              // ตรวจสอบพารามิเตอร์เพื่อจำลองความสัมพันธ์ของเพื่อน LINE OA ใน Local Test
+              const mockFriendParam = getQueryParam('mockFriend');
+              if (mockFriendParam !== null) {
+                userLineProfile = {
+                  userId: "MOCK_LINE_USER_123",
+                  displayName: "ผู้ใช้จำลอง (Demo User)"
+                };
+                loadUserReports();
+                checkUrlParams();
+                
+                if (mockFriendParam === 'true') {
+                  updateFriendshipUI(true);
+                } else {
+                  updateFriendshipUI(false);
+                  Swal.fire({
+                    title: 'กรุณาเพิ่มเพื่อนเพื่อใช้งานระบบ',
+                    text: 'ท่านยังไม่ได้เพิ่มเพื่อนกับ LINE OA "แจ้งซ่อมไฟ_ประชาชน" (@086kdhvh) กรุณาเพิ่มเพื่อนเพื่อที่ระบบจะส่งข้อความยืนยันและอัปเดตความคืบหน้าการซ่อมกลับไปในห้องแชทของท่านได้ครับ',
+                    icon: 'warning',
+                    showCancelButton: false,
+                    confirmButtonText: '➕ เพิ่มเพื่อนทันที',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    background: '#161c2d',
+                    color: '#f3f4f6',
+                    confirmButtonColor: '#10b981'
+                  }).then((result) => {
+                    if (result.isConfirmed) {
+                      liff.openWindow({
+                        url: 'https://line.me/R/ti/p/%40086kdhvh',
+                        external: true
+                      });
+                      Swal.fire({
+                        title: 'ตรวจสอบการเพิ่มเพื่อน (จำลอง)',
+                        text: 'ระบบได้เปิดลิงก์แอดเพื่อนจำลองแล้ว กรุณากดตรวจสอบอีกครั้งเพื่อเข้าใช้งาน',
+                        icon: 'info',
+                        showCancelButton: false,
+                        confirmButtonText: '🔄 ตรวจสอบสถานะการเป็นเพื่อน',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        background: '#161c2d',
+                        color: '#f3f4f6',
+                        confirmButtonColor: '#0284c7'
+                      }).then(() => {
+                        const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + "?mockFriend=true";
+                        window.location.href = newurl;
+                      });
+                    }
+                  });
+                }
+              } else {
+                loadUserReports();
+                checkUrlParams();
+                updateFriendshipUI(null);
+              }
             }
           }
         })
