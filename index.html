@@ -344,6 +344,38 @@
       cursor: not-allowed;
       opacity: 0.6;
     }
+
+    /* Friendship status badge styling */
+    .friendship-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      border: 1px solid transparent;
+    }
+
+    .badge-friend {
+      background-color: rgba(22, 163, 74, 0.1);
+      color: #16a34a;
+      border-color: rgba(22, 163, 74, 0.2);
+    }
+
+    .badge-unfriend {
+      background-color: rgba(220, 38, 38, 0.1);
+      color: #dc2626;
+      border-color: rgba(220, 38, 38, 0.2);
+    }
+
+    .badge-guest {
+      background-color: rgba(71, 85, 105, 0.1);
+      color: #475569;
+      border-color: rgba(71, 85, 105, 0.2);
+    }
   </style>
 </head>
 
@@ -367,6 +399,7 @@
       <h1>ระบบแจ้งซ่อมปัญหาไฟฟ้าสาธารณะ</h1>
       <p>ในเขตเทศบาลตำบลตันหยงมัส</p>
     </div>
+    <div id="friendshipStatusContainer" style="margin-left: auto; display: flex; align-items: center;"></div>
   </div>
 
   <div class="app-container">
@@ -1118,11 +1151,39 @@
     // ==========================================
     // 2.3 LINE LIFF & Tracking Status Timeline Systems
     // ==========================================
+    // ฟังก์ชันสำหรับอัปเดต UI ของแถบแสดงสถานะเพื่อน LINE OA
+    function updateFriendshipUI(isFriend) {
+      const container = document.getElementById('friendshipStatusContainer');
+      if (!container) return;
+
+      if (isFriend === true) {
+        container.innerHTML = `
+          <div class="friendship-status-badge badge-friend">
+            <i class="fa-solid fa-user-check"></i> เป็นเพื่อนแล้ว
+          </div>
+        `;
+      } else if (isFriend === false) {
+        container.innerHTML = `
+          <div class="friendship-status-badge badge-unfriend">
+            <i class="fa-solid fa-user-plus"></i> ยังไม่ได้เพิ่มเพื่อน
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="friendship-status-badge badge-guest">
+            <i class="fa-solid fa-globe"></i> เว็บเบราว์เซอร์
+          </div>
+        `;
+      }
+    }
+
+    // ==========================================
+    // 2.3 LINE LIFF & Tracking Status Timeline Systems
+    // ==========================================
     function initLiff() {
       if (typeof liff === 'undefined') {
         console.warn("LINE LIFF SDK is not loaded.");
-        // ถ้ารันไม่ได้เลย (ไม่มี SDK) ให้แสดง Help Popup ตามปกติ
-        setTimeout(showHelpPopup, 1000);
+        updateFriendshipUI(null);
         return;
       }
       liff.init({ liffId: liffConfig.liffId })
@@ -1152,8 +1213,7 @@
               console.log("Local testing detected. Skipping auto-login redirect.");
               loadUserReports();
               checkUrlParams();
-              // สำหรับการรันแบบ Local Testing / Web ทั่วไป ค่อยแสดง Help Popup ตามปกติ
-              setTimeout(showHelpPopup, 1000);
+              updateFriendshipUI(null);
             }
           }
         })
@@ -1162,8 +1222,7 @@
           // If LIFF fails (e.g. offline/blocked), still load local reports so the page doesn't hang
           loadUserReports();
           checkUrlParams();
-          // โหลดล้มเหลว ให้แสดง Help Popup ตามปกติ
-          setTimeout(showHelpPopup, 1000);
+          updateFriendshipUI(null);
         });
     }
 
@@ -1173,10 +1232,11 @@
           .then(data => {
             console.log("LINE Friendship Status:", data);
             if (!data.friendFlag) {
+              updateFriendshipUI(false);
               Swal.fire({
-                title: 'กรุณาเพิ่มเพื่อนเพื่อติดตามสถานะ',
-                text: 'คุณยังไม่ได้เพิ่มเพื่อนกับ LINE OA "แจ้งซ่อมไฟ_ประชาชน" (@086kdhvh) กรุณาเพิ่มเพื่อนเพื่อที่ระบบจะส่งข้อความยืนยันและอัปเดตความคืบหน้าการซ่อมกลับไปในห้องแชทของท่านได้ครับ',
-                icon: 'info',
+                title: 'กรุณาเพิ่มเพื่อนเพื่อใช้งานระบบ',
+                text: 'ท่านยังไม่ได้เพิ่มเพื่อนกับ LINE OA "แจ้งซ่อมไฟ_ประชาชน" (@086kdhvh) กรุณาเพิ่มเพื่อนเพื่อที่ระบบจะส่งข้อความยืนยันและอัปเดตความคืบหน้าการซ่อมกลับไปในห้องแชทของท่านได้ครับ',
+                icon: 'warning',
                 showCancelButton: false,
                 confirmButtonText: '➕ เพิ่มเพื่อนทันที',
                 allowOutsideClick: false,
@@ -1190,21 +1250,35 @@
                     url: 'https://line.me/R/ti/p/%40086kdhvh',
                     external: true
                   });
+                  // บังคับให้โหลดใหม่เพื่อเช็คความสัมพันธ์หลังจากเพิ่มเพื่อนแล้ว
+                  Swal.fire({
+                    title: 'ตรวจสอบการเพิ่มเพื่อน',
+                    text: 'เมื่อกดเพิ่มเพื่อนเรียบร้อยแล้ว กรุณากดปุ่มเพื่อตรวจสอบสถานะอีกครั้งเพื่อเข้าใช้งาน',
+                    icon: 'info',
+                    showCancelButton: false,
+                    confirmButtonText: '🔄 ตรวจสอบสถานะการเป็นเพื่อน',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    background: '#161c2d',
+                    color: '#f3f4f6',
+                    confirmButtonColor: '#0284c7'
+                  }).then(() => {
+                    location.reload();
+                  });
                 }
               });
             } else {
-              // ถ้าตรวจสอบว่าเป็นเพื่อนกันอยู่แล้ว ค่อยแสดง Help Popup แนะนำวิธีใช้งานแจ้งซ่อม
-              setTimeout(showHelpPopup, 500);
+              // ถ้าตรวจสอบว่าเป็นเพื่อนกันอยู่แล้ว อัปเดต UI ว่าเป็นเพื่อนแล้ว
+              updateFriendshipUI(true);
             }
           })
           .catch(err => {
             console.error("Error checking friendship status:", err);
-            // หากตรวจสอบล้มเหลว ให้แสดง Help Popup สำรองตามปกติ
-            setTimeout(showHelpPopup, 500);
+            updateFriendshipUI(null);
           });
       } else {
-        // ถ้ารันอยู่นอก LINE Client (เช่น เปิดผ่านเบราว์เซอร์ปกติหรือสำหรับการทดสอบ) ให้แสดง Help Popup ตามปกติ
-        setTimeout(showHelpPopup, 1000);
+        // ถ้ารันอยู่นอก LINE Client (เช่น เปิดผ่านเบราว์เซอร์ปกติหรือสำหรับการทดสอบ)
+        updateFriendshipUI(null);
       }
     }
 
