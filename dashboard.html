@@ -1805,19 +1805,36 @@
           layout: "horizontal",
           spacing: "md",
           contents: [
-            // ส่วนที่ 1: สถานะ Emoji (ซ้าย)
+            // ส่วนที่ 1: ไทม์ไลน์แนวตั้งพร้อมเส้นเชื่อม (ซ้าย)
             {
               type: "box",
               layout: "vertical",
               width: "24px",
-              alignItems: "center",
-              justifyContent: "center",
               contents: [
+                // เส้นแนวตั้ง (ลากเชื่อมจุดสถานะ)
                 {
-                  type: "text",
-                  text: hist.status === 'resolved' ? "🟢" : hist.status === 'in_progress' ? "🟡" : "🔴",
-                  size: "sm",
-                  align: "center"
+                  type: "box",
+                  layout: "vertical",
+                  width: "2px",
+                  backgroundColor: "#cbd5e1",
+                  position: "absolute",
+                  top: idx === 0 ? "12px" : "0px",
+                  bottom: isLast ? "12px" : "0px",
+                  left: "11px",
+                  contents: [{ type: "text", text: " ", size: "xxs" }]
+                },
+                // จุดสถานะวงกลม
+                {
+                  type: "box",
+                  layout: "vertical",
+                  width: "12px",
+                  height: "12px",
+                  cornerRadius: "xxl",
+                  backgroundColor: dotColor,
+                  position: "absolute",
+                  top: "6px",
+                  left: "6px",
+                  contents: [{ type: "text", text: " ", size: "xxs" }]
                 }
               ]
             },
