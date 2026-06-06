@@ -9,8 +9,10 @@
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="apple-touch-icon" sizes="180x180" href="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png">
+  <link rel="icon" type="image/png" sizes="32x32"
+    href="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png">
+  <link rel="icon" type="image/png" sizes="16x16"
+    href="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png">
 
   <!-- CSS Stylesheet -->
   <link rel="stylesheet" href="style.css">
@@ -387,8 +389,10 @@
       <!-- ฟอร์มการแจ้งซ่อม (จะเปิดขึ้นเมื่อเลือกไฟ) -->
       <div id="reportPanel" class="report-panel">
         <!-- แผงกรณีที่ยังไม่ได้เลือกเสาไฟบนแผนที่ -->
-        <div id="noLightSelectedGuide" style="text-align: center; padding: 24px 0; color: var(--text-muted); font-size: 13px;">
-          <i class="fa-solid fa-map-location-dot" style="font-size: 40px; color: var(--accent-cyan); margin-bottom: 12px; display: block;"></i>
+        <div id="noLightSelectedGuide"
+          style="text-align: center; padding: 24px 0; color: var(--text-muted); font-size: 13px;">
+          <i class="fa-solid fa-map-location-dot"
+            style="font-size: 40px; color: var(--accent-cyan); margin-bottom: 12px; display: block;"></i>
           <p style="font-weight: 600; color: var(--text-main); margin-bottom: 4px;">ยังไม่ได้เลือกเสาไฟ</p>
           <p>กรุณาคลิกหมุดเสาไฟสีเขียว/แดง บนแผนที่ เพื่อกดแจ้งซ่อมบริเวณนั้น</p>
         </div>
@@ -396,8 +400,10 @@
         <!-- ห่อหุ้มฟอร์มแจ้งซ่อมเมื่อเลือกเสาไฟแล้ว -->
         <div id="reportFormContainer" style="display: none;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h3 style="font-size: 16px; color: var(--text-main);"><i class="fa-solid fa-circle-info"></i> รายละเอียดเสาไฟ</h3>
-            <button class="btn btn-secondary" onclick="closeReportPanel()" style="padding: 4px 8px; font-size: 12px;">ปิด</button>
+            <h3 style="font-size: 16px; color: var(--text-main);"><i class="fa-solid fa-circle-info"></i>
+              รายละเอียดเสาไฟ</h3>
+            <button class="btn btn-secondary" onclick="closeReportPanel()"
+              style="padding: 4px 8px; font-size: 12px;">ปิด</button>
           </div>
 
           <div class="light-info-card">
@@ -423,7 +429,8 @@
             <input type="hidden" id="reportLightId">
 
             <div class="form-group">
-              <label class="form-label" for="issueType">ประเภทปัญหาที่พบ <span style="color:var(--color-danger)">*</span></label>
+              <label class="form-label" for="issueType">ประเภทปัญหาที่พบ <span
+                  style="color:var(--color-danger)">*</span></label>
               <select class="form-select" id="issueType" required>
                 <option value="" disabled selected>-- เลือกประเภทปัญหา --</option>
                 <option value="ไฟไม่ติด">💡 ไฟไม่ติด/ดับสนิท</option>
@@ -436,16 +443,19 @@
 
             <div class="form-group">
               <label class="form-label" for="reportDetail">รายละเอียดเพิ่มเติม</label>
-              <textarea class="form-textarea" id="reportDetail" rows="3" placeholder="เช่น ดับเฉพาะช่วงดึก หรือมีกิ่งไม้บดบัง..."></textarea>
+              <textarea class="form-textarea" id="reportDetail" rows="3"
+                placeholder="เช่น ดับเฉพาะช่วงดึก หรือมีกิ่งไม้บดบัง..."></textarea>
             </div>
 
             <div class="form-group">
               <label class="form-label" for="reporterPhone">เบอร์โทรศัพท์ผู้แจ้ง (ไม่บังคับ)</label>
-              <input type="tel" class="form-input" id="reporterPhone" placeholder="08X-XXXXXXX เพื่อความสะดวกในการติดต่อกลับ">
+              <input type="tel" class="form-input" id="reporterPhone"
+                placeholder="08X-XXXXXXX เพื่อความสะดวกในการติดต่อกลับ">
             </div>
 
             <div class="form-group">
-              <label class="form-label">รูปภาพประกอบ (แนบอย่างน้อย 1 รูป, สูงสุด 4 รูป) <span style="color:var(--color-danger)">*</span></label>
+              <label class="form-label">รูปภาพประกอบ (แนบอย่างน้อย 1 รูป, สูงสุด 4 รูป) <span
+                  style="color:var(--color-danger)">*</span></label>
               <div class="image-upload-wrapper">
                 <div class="image-previews" id="imagePreviews"></div>
                 <label class="image-upload-btn" id="uploadBtnLabel" for="imageInput">
@@ -454,7 +464,8 @@
                 </label>
                 <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
               </div>
-              <div id="imageCountText" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">เลือกแล้ว 0 / 4 รูป (แนบอย่างน้อย 1 รูป)</div>
+              <div id="imageCountText" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">เลือกแล้ว 0 /
+                4 รูป (แนบอย่างน้อย 1 รูป)</div>
             </div>
 
             <button type="submit" class="btn btn-danger" style="width: 100%; margin-top: 10px;">
@@ -467,11 +478,14 @@
       <!-- แผงติดตามสถานะ (Track Status Panel) -->
       <div id="trackPanel" class="track-panel" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 style="font-size: 16px; color: var(--text-main);"><i class="fa-solid fa-clock-rotate-left"></i> รายการแจ้งซ่อมของฉัน</h3>
-          <button class="btn btn-secondary" onclick="closeReportPanel()" style="padding: 4px 8px; font-size: 12px;">ปิด</button>
+          <h3 style="font-size: 16px; color: var(--text-main);"><i class="fa-solid fa-clock-rotate-left"></i>
+            รายการแจ้งซ่อมของฉัน</h3>
+          <button class="btn btn-secondary" onclick="closeReportPanel()"
+            style="padding: 4px 8px; font-size: 12px;">ปิด</button>
         </div>
         <div id="userReportsList" class="my-reports-list">
-          <p style="color: var(--text-muted); text-align: center; font-size: 13px; margin-top: 20px;">กำลังโหลดข้อมูล...</p>
+          <p style="color: var(--text-muted); text-align: center; font-size: 13px; margin-top: 20px;">กำลังโหลดข้อมูล...
+          </p>
         </div>
       </div>
 
@@ -517,7 +531,7 @@
 
     // LINE Messaging API Configuration for Staff Notifications
     const lineConfig = {
-      channelAccessToken: "HXo5F5nDkmlfp92CgBw5BEaZRVJf0Ux5RD9HeU5TJTV0OuiolmziudguZ2EZO6VQ/nWCrEPIoxcEg8n6x2epOsurF5P5V5ss5IIYsBjCTudfds7HgKnVBArFyqkIBeqgfJw4hIUu9MARGZJxJmsRJwdB04t89/1O/w1cDnyilFU=", // รหัส Access Token จริง
+      channelAccessToken: "44fvkGxNSGRGHt8ALVm5Cy3gKqnaLv9/IN2madluzOBhlt9EwBerGZtEt9JsPVPIItnhj/kN9omQAirCO90T0t2fMqWxV4/Qmiv1pTporI88Uv7kXtlEURCo7A8Om6xSK48UwD8BZYJW8oHQfLbQXQdB04t89/1O/w1cDnyilFU=", // รหัส Access Token ของเจ้าหน้าที่
       useCorsProxy: true,                                 // ใช้ CORS Proxy สำหรับการทดสอบจากหน้าบ้าน
       corsProxyUrl: "https://corsproxy.io/?"             // บริการ Proxy ฟรี (ไม่ต้องเปิดหน้าเว็บปลดล็อกก่อนใช้งาน)
     };
@@ -943,17 +957,17 @@
         let timelineHtml = '';
         if (report.statusHistory && report.statusHistory.length > 0) {
           const sortedHistory = [...report.statusHistory].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-          
+
           timelineHtml = `
             <div class="timeline">
               ${sortedHistory.map(hist => {
-                let statusClass = 'pending';
-                if (hist.status === 'in_progress') statusClass = 'in_progress';
-                else if (hist.status === 'resolved') statusClass = 'resolved';
+            let statusClass = 'pending';
+            if (hist.status === 'in_progress') statusClass = 'in_progress';
+            else if (hist.status === 'resolved') statusClass = 'resolved';
 
-                const histTime = formatTime(hist.timestamp);
+            const histTime = formatTime(hist.timestamp);
 
-                return `
+            return `
                   <div class="timeline-item ${statusClass}">
                     <div class="timeline-badge"></div>
                     <div class="timeline-content">
@@ -963,7 +977,7 @@
                     </div>
                   </div>
                 `;
-              }).join('')}
+          }).join('')}
             </div>
           `;
         }
@@ -1001,7 +1015,7 @@
       } else {
         date = new Date(timestampString);
       }
-      
+
       return date.toLocaleDateString('th-TH', {
         day: '2-digit',
         month: 'short',
@@ -1236,7 +1250,7 @@
       document.getElementById('reportLightId').value = '';
       document.getElementById('noLightSelectedGuide').style.display = 'block';
       document.getElementById('reportFormContainer').style.display = 'none';
-      
+
       switchSidebarTab(tabName);
 
       const sidebar = document.querySelector('.sidebar');
