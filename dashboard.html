@@ -1767,6 +1767,119 @@
         citizenUrl = `${baseUrl}/index.html?page=track`;
       }
 
+      function getStatusLabel(status) {
+        if (status === 'pending' || status === 'broken') return 'ได้รับเรื่องแล้ว';
+        if (status === 'in_progress') return 'กำลังดำเนินการ';
+        if (status === 'resolved') return 'ซ่อมแซมเสร็จสิ้น';
+        return status;
+      }
+
+      // เรียงลำดับประวัติการซ่อมจากเก่าไปใหม่ตามเวลาจริง เพื่อวาดไทม์ไลน์ใน LINE Flex Message
+      const historyList = report.statusHistory || [
+        {
+          status: 'pending',
+          label: 'ได้รับเรื่องแล้ว',
+          timestamp: report.timestamp || new Date().toISOString(),
+          note: 'ระบบได้รับแจ้งเรื่องไฟฟ้าสาธารณะชำรุดเรียบร้อยแล้ว'
+        }
+      ];
+      const sortedHistory = [...historyList].sort((a, b) => {
+        const timeA = a.timestamp ? (a.timestamp.seconds ? a.timestamp.seconds * 1000 : new Date(a.timestamp).getTime()) : 0;
+        const timeB = b.timestamp ? (b.timestamp.seconds ? b.timestamp.seconds * 1000 : new Date(b.timestamp).getTime()) : 0;
+        return timeA - timeB;
+      });
+
+      // สร้างอาร์เรย์ขององค์ประกอบไทม์ไลน์แนวตั้งสำหรับ Flex Message
+      const timelineContents = sortedHistory.map((hist, idx) => {
+        let dotColor = "#cbd5e1"; // สีเทา (สถานะก่อนหน้า)
+        let isLast = idx === sortedHistory.length - 1;
+        
+        if (hist.status === 'pending' || hist.status === 'broken') dotColor = "#dc2626"; // สีแดง
+        else if (hist.status === 'in_progress') dotColor = "#d97706";                    // สีส้ม
+        else if (hist.status === 'resolved') dotColor = "#16a34a";                       // สีเขียว
+
+        const histTime = formatTime(hist.timestamp);
+        
+        const itemBox = {
+          type: "box",
+          layout: "horizontal",
+          spacing: "md",
+          contents: [
+            // ส่วนที่ 1: เส้นแนวตั้งและจุดกลม (ซ้าย)
+            {
+              type: "box",
+              layout: "vertical",
+              width: "16px",
+              alignItems: "center",
+              contents: [
+                // เส้นบนเชื่อมจุด (ยกเว้นตัวแรกสุด)
+                {
+                  type: "box",
+                  layout: "vertical",
+                  width: "2px",
+                  height: "8px",
+                  backgroundColor: idx > 0 ? "#e2e8f0" : "#ffffff"
+                },
+                // จุดกลมของสถานะ
+                {
+                  type: "box",
+                  layout: "vertical",
+                  width: "12px",
+                  height: "12px",
+                  cornerRadius: "6px",
+                  backgroundColor: dotColor
+                },
+                // เส้นล่างเชื่อมจุดต่อไป (ยกเว้นตัวท้ายสุด)
+                {
+                  type: "box",
+                  layout: "vertical",
+                  width: "2px",
+                  flex: 1,
+                  backgroundColor: !isLast ? "#e2e8f0" : "#ffffff"
+                }
+              ]
+            },
+            // ส่วนที่ 2: ข้อความรายละเอียดสถานะ (ขวา)
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 1,
+              paddingBottom: isLast ? "0px" : "12px",
+              contents: [
+                {
+                  type: "text",
+                  text: hist.label || getStatusLabel(hist.status),
+                  weight: "bold",
+                  size: "sm",
+                  color: isLast ? "#0f172a" : "#64748b" // ไฮไลท์ข้อความสถานะล่าสุด
+                },
+                {
+                  type: "text",
+                  text: histTime,
+                  size: "xs",
+                  color: "#94a3b8",
+                  margin: "xs"
+                }
+              ]
+            }
+          ]
+        };
+
+        // ใส่บันทึกหมายเหตุเพิ่มเติมจากช่าง (ถ้ามี)
+        if (hist.note) {
+          itemBox.contents[1].contents.push({
+            type: "text",
+            text: hist.note,
+            size: "xs",
+            color: "#475569",
+            wrap: true,
+            margin: "xs"
+          });
+        }
+
+        return itemBox;
+      });
+
       const payload = {
         to: targetUserId,
         messages: [
@@ -1794,7 +1907,7 @@
                 contents: [
                   {
                     type: "text",
-                    text: `📢 สถานะ: ${statusLabel}`,
+                    text: `📢 อัปเดตสถานะ: ${statusLabel}`,
                     weight: "bold",
                     color: "#ffffff",
                     size: "md"
@@ -1861,25 +1974,19 @@
                     margin: "md"
                   },
                   {
+                    type: "text",
+                    text: "📍 ไทม์ไลน์การดำเนินงาน:",
+                    size: "sm",
+                    weight: "bold",
+                    color: "#0f172a",
+                    margin: "sm"
+                  },
+                  {
                     type: "box",
                     layout: "vertical",
-                    spacing: "xs",
-                    contents: [
-                      {
-                        type: "text",
-                        text: "📝 รายละเอียดการปรับปรุง:",
-                        size: "sm",
-                        weight: "bold",
-                        color: "#0f172a"
-                      },
-                      {
-                        type: "text",
-                        text: statusNote,
-                        size: "sm",
-                        color: "#475569",
-                        wrap: true
-                      }
-                    ]
+                    spacing: "none",
+                    margin: "xs",
+                    contents: timelineContents
                   }
                 ]
               },
