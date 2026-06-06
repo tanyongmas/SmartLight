@@ -856,14 +856,30 @@
               checkUrlParams();
             }).catch(err => console.error("Error getting profile:", err));
           } else {
-            // Auto-login inside LINE or non-localhost
-            if (liff.isInClient() || (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')) {
+            // Auto-login inside LINE or non-localhost, but NOT for local files (file://) or local network IPs
+            const isLocalFile = window.location.protocol === 'file:';
+            const isLocalHost = window.location.hostname === 'localhost' || 
+                                window.location.hostname === '127.0.0.1' || 
+                                window.location.hostname.startsWith('192.168.') || 
+                                window.location.hostname.startsWith('10.') ||
+                                window.location.hostname === '';
+            
+            if (liff.isInClient()) {
               liff.login();
+            } else if (!isLocalFile && !isLocalHost) {
+              liff.login();
+            } else {
+              console.log("Local testing detected. Skipping auto-login redirect.");
+              loadUserReports();
+              checkUrlParams();
             }
           }
         })
         .catch(err => {
           console.error("LIFF Initialization failed:", err);
+          // If LIFF fails (e.g. offline/blocked), still load local reports so the page doesn't hang
+          loadUserReports();
+          checkUrlParams();
         });
     }
 
