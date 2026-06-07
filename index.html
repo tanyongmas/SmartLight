@@ -396,7 +396,7 @@
   <div class="logo-card glass-panel">
     <img src="https://img2.pic.in.th/pic/71f81565dc59a7f9545542493a5514ab.png" alt="โลโก้เทศบาลตำบลตันหยงมัส">
     <div class="logo-text">
-      <h1>ระบบแจ้งซ่อมปัญหาไฟฟ้าสาธารณะ</h1>
+      <h1>ระบบแจ้งซ่อมปัญหาไฟสาธารณะ</h1>
       <p>ในเขตเทศบาลตำบลตันหยงมัส</p>
     </div>
     <div id="friendshipStatusContainer" style="margin-left: auto; display: flex; align-items: center;"></div>
@@ -1277,7 +1277,7 @@
               showAddFriendFirstAndLogin();
             } else {
               console.log("Local testing detected. Skipping auto-login redirect.");
-              
+
               // ตรวจสอบพารามิเตอร์เพื่อจำลองความสัมพันธ์ของเพื่อน LINE OA ใน Local Test
               const mockFriendParam = getQueryParam('mockFriend');
               if (mockFriendParam !== null) {
@@ -1287,7 +1287,7 @@
                 };
                 loadUserReports();
                 checkUrlParams();
-                
+
                 if (mockFriendParam === 'true') {
                   updateFriendshipUI(true);
                   Swal.fire({
