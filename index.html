@@ -1208,6 +1208,8 @@
               window.location.hostname === '127.0.0.1' ||
               window.location.hostname.startsWith('192.168.') ||
               window.location.hostname.startsWith('10.') ||
+              window.location.hostname.startsWith('172.') ||
+              /^[0-9.]+$/.test(window.location.hostname) ||
               window.location.hostname === '';
 
             const showAddFriendFirstAndLogin = () => {
@@ -1326,6 +1328,15 @@
           loadUserReports();
           checkUrlParams();
           updateFriendshipUI(null);
+          Swal.fire({
+            title: 'ระบบไม่สามารถเริ่มต้นไลน์ LIFF ได้',
+            text: 'รายละเอียดความผิดพลาด: ' + err.toString(),
+            icon: 'error',
+            confirmButtonText: 'ตกลง',
+            background: '#161c2d',
+            color: '#f3f4f6',
+            confirmButtonColor: '#ef4444'
+          });
         });
     }
 
@@ -1387,6 +1398,15 @@
           .catch(err => {
             console.error("Error checking friendship status:", err);
             updateFriendshipUI(null);
+            Swal.fire({
+              title: 'ระบบไม่สามารถตรวจสอบความสัมพันธ์กับไลน์โอเอได้',
+              text: 'รายละเอียดความผิดพลาด: ' + err.toString(),
+              icon: 'error',
+              confirmButtonText: 'ตกลง',
+              background: '#161c2d',
+              color: '#f3f4f6',
+              confirmButtonColor: '#ef4444'
+            });
           });
       } else {
         // ถ้ารันอยู่นอก LINE Client (เช่น เปิดผ่านเบราว์เซอร์ปกติหรือสำหรับการทดสอบ)
