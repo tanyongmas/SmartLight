@@ -1266,6 +1266,15 @@
                 
                 if (mockFriendParam === 'true') {
                   updateFriendshipUI(true);
+                  Swal.fire({
+                    title: 'ตรวจสอบสถานะผู้ใช้งานสำเร็จ',
+                    text: 'บัญชี LINE ของท่านเชื่อมต่อและเป็นเพื่อนกับระบบเรียบร้อยแล้ว',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    background: '#161c2d',
+                    color: '#f3f4f6'
+                  });
                 } else {
                   updateFriendshipUI(false);
                   Swal.fire({
@@ -1364,6 +1373,15 @@
             } else {
               // ถ้าตรวจสอบว่าเป็นเพื่อนกันอยู่แล้ว อัปเดต UI ว่าเป็นเพื่อนแล้ว
               updateFriendshipUI(true);
+              Swal.fire({
+                title: 'ตรวจสอบสถานะผู้ใช้งานสำเร็จ',
+                text: 'บัญชี LINE ของท่านเชื่อมต่อและเป็นเพื่อนกับระบบเรียบร้อยแล้ว',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false,
+                background: '#161c2d',
+                color: '#f3f4f6'
+              });
             }
           })
           .catch(err => {
