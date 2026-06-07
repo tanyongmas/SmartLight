@@ -1398,15 +1398,53 @@
           .catch(err => {
             console.error("Error checking friendship status:", err);
             updateFriendshipUI(null);
-            Swal.fire({
-              title: 'ระบบไม่สามารถตรวจสอบความสัมพันธ์กับไลน์โอเอได้',
-              text: 'รายละเอียดความผิดพลาด: ' + err.toString(),
-              icon: 'error',
-              confirmButtonText: 'ตกลง',
-              background: '#161c2d',
-              color: '#f3f4f6',
-              confirmButtonColor: '#ef4444'
-            });
+            const errStr = err.toString();
+            if (errStr.includes("There is no login bot linked to this channel") || errStr.includes("login bot")) {
+              Swal.fire({
+                title: 'ยังไม่ได้เชื่อมโยง LINE Login กับ LINE OA',
+                html: `
+                  <div style="text-align: left; font-family: 'Noto Sans Thai', sans-serif; font-size: 14px; line-height: 1.6; color: #f3f4f6;">
+                    <p style="color: #ef4444; font-weight: bold; margin-bottom: 12px;">
+                      ⚠️ พบข้อผิดพลาดการเชื่อมต่อช่องทางไลน์ (สำหรับผู้พัฒนาระบบ):
+                    </p>
+                    <p style="margin-bottom: 8px;">
+                      <strong>รายละเอียดความผิดพลาด:</strong><br>
+                      <span style="color: #cbd5e1; font-family: monospace;">${errStr}</span>
+                    </p>
+                    <p style="margin-bottom: 12px;">
+                      สาเหตุเกิดจาก <strong>LINE Login Channel</strong> (ที่มีแอป LIFF นี้อยู่) ยังไม่ได้เชื่อมโยงเข้ากับ <strong>LINE Official Account (Bot)</strong> ของคุณ ทำให้ระบบไม่สามารถใช้ฟังก์ชันตรวจสอบความเป็นเพื่อนได้
+                    </p>
+                    <p style="font-weight: 600; color: #10b981; margin-bottom: 6px;">วิธีการแก้ไขสำหรับผู้ดูแลระบบ:</p>
+                    <ol style="padding-left: 20px; display: flex; flex-direction: column; gap: 6px; color: #d1d5db;">
+                      <li>เข้าสู่ระบบ <a href="https://developers.line.biz/" target="_blank" style="color: #38bdf8; text-decoration: underline;">LINE Developers Console</a></li>
+                      <li>เลือก <strong>Provider</strong> ของคุณ และคลิกเข้าไปที่ช่อง <strong>LINE Login Channel</strong> ที่ใช้งาน</li>
+                      <li>คลิกแท็บ <strong>LINE Login settings</strong></li>
+                      <li>เลื่อนลงไปด้านล่างสุดที่หัวข้อ <strong>Linked OA</strong> (หรือ Bot link)</li>
+                      <li>คลิกปุ่ม <strong>Edit</strong> เลือก LINE Official Account (Bot) ของคุณ (<strong>@086kdhvh</strong>)</li>
+                      <li>กดปุ่ม <strong>Update</strong> เพื่อบันทึกข้อมูล</li>
+                    </ol>
+                    <p style="margin-top: 14px; color: #94a3b8; font-size: 12px; text-align: center;">
+                      *หลังจากแก้ไขแล้ว ให้ปิดและเปิดแอปใหม่อีกครั้ง
+                    </p>
+                  </div>
+                `,
+                icon: 'error',
+                confirmButtonText: 'ตกลง',
+                background: '#161c2d',
+                color: '#f3f4f6',
+                confirmButtonColor: '#ef4444'
+              });
+            } else {
+              Swal.fire({
+                title: 'ระบบไม่สามารถตรวจสอบความสัมพันธ์กับไลน์โอเอได้',
+                text: 'รายละเอียดความผิดพลาด: ' + errStr,
+                icon: 'error',
+                confirmButtonText: 'ตกลง',
+                background: '#161c2d',
+                color: '#f3f4f6',
+                confirmButtonColor: '#ef4444'
+              });
+            }
           });
       } else {
         // ถ้ารันอยู่นอก LINE Client (เช่น เปิดผ่านเบราว์เซอร์ปกติหรือสำหรับการทดสอบ)
