@@ -1222,6 +1222,38 @@
     let activeModalLightId = null;
     let isAddingPoleMode = false;
 
+    // ฟังก์ชันสร้างลิงก์ QR Code ปลายทาง สำหรับทดสอบระบบแบบ Local หรือใช้งานจริงบนโปรดักชั่น
+    function getCitizenUrl(lightId = null, page = null) {
+      const isLocalFile = window.location.protocol === 'file:';
+      const isLocalHost = window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname.startsWith('192.168.') ||
+        window.location.hostname.startsWith('10.') ||
+        window.location.hostname === '';
+      
+      const currentUrl = window.location.href;
+      let baseUrl = "https://tanyongmas.github.io/SmartLight";
+      if (currentUrl.startsWith("http")) {
+        baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
+      }
+
+      if (isLocalFile || isLocalHost) {
+        // ในระบบทดสอบเครื่องคอมตัวเอง ให้ลิ้งค์ไปหา index.html ของเครื่องทดสอบตรงๆ พร้อม mockFriend=false
+        let url = `${baseUrl}/index.html`;
+        const params = [];
+        if (lightId) params.push(`lightId=${lightId}`);
+        if (page) params.push(`page=${page}`);
+        params.push("mockFriend=false"); // บังคับให้เด้งแสดงป๊อปอัปเพิ่มเพื่อนจำลองก่อน
+        return `${url}?${params.join('&')}`;
+      } else {
+        // ระบบจริงผ่าน LINE LIFF
+        if (page) {
+          return `https://liff.line.me/2010313933-7q4q3WSR?page=${page}`;
+        }
+        return `https://liff.line.me/2010313933-7q4q3WSR?lightId=${lightId}`;
+      }
+    }
+
     // ==========================================
     // 2. การเริ่มต้นระบบและการตรวจสอบเข้าสู่ระบบ
     // ==========================================
@@ -1758,14 +1790,8 @@
         statusNote = 'ดำเนินการเปลี่ยนหลอดไฟ/ซ่อมโคมไฟสำเร็จ ไฟฟ้าสาธารณะส่องสว่างปกติแล้ว';
       }
 
-      // ใช้ลิ้งค์ LINE LIFF เสมอเพื่อให้ประชาชนกดเปิดประวัติการแจ้งซ่อมได้ภายในห้องแชท LINE ทันที (Traffy Fondue style)
-      // และป้องกันความผิดพลาดกรณีเปิดไฟล์ทดสอบผ่านสคีม file:/// ซึ่งจะถูก LINE API ปฏิเสธการส่งข้อความด้วยรหัส 400 Bad Request
-      let citizenUrl = "https://liff.line.me/2010313933-7q4q3WSR?page=track";
-      const currentUrl = window.location.href;
-      if (currentUrl.startsWith("http") && !currentUrl.includes("localhost") && !currentUrl.includes("127.0.0.1")) {
-        const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
-        citizenUrl = `${baseUrl}/index.html?page=track`;
-      }
+      // ใช้ลิ้งค์ LINE LIFF เสมอ หรือชี้ไปหาเครื่องทดสอบของเจ้าหน้าที่
+      let citizenUrl = getCitizenUrl(null, 'track');
 
       function getStatusLabel(status) {
         if (status === 'pending' || status === 'broken') return 'ได้รับเรื่องแล้ว';
@@ -2329,9 +2355,8 @@
       // อัปเดตสถานะปุ่มใน Modal
       updateModalQueueButton();
 
-      // สร้าง URL สำหรับชี้ไปหา LINE LIFF ของประชาชน พร้อม parameter รหัสเสาไฟ
-      // เพื่อสนับสนุนระบบตรวจจับความสัมพันธ์เพื่อน (Bot Link) และส่งตัวแปรไปยังหน้ารายงานของเสาไฟต้นนั้นทันที
-      const citizenUrl = `https://liff.line.me/2010313933-7q4q3WSR?lightId=${light.id}`;
+      // สร้าง URL สำหรับชี้ไปหา LINE LIFF หรือเครื่องจำลองทดสอบ พร้อม parameter รหัสเสาไฟ
+      const citizenUrl = getCitizenUrl(light.id);
 
       // รีเซ็ตพื้นที่ก่อนสร้างคิวอาร์โค้ดใหม่
       document.getElementById('qrcode').innerHTML = '';
@@ -2386,7 +2411,7 @@
       const light = allLights.find(l => l.id === activeModalLightId);
 
       if (light) {
-        const citizenUrl = `https://liff.line.me/2010313933-7q4q3WSR?lightId=${light.id}`;
+        const citizenUrl = getCitizenUrl(light.id);
 
         const pageDiv = document.createElement('div');
         pageDiv.className = 'print-page';
@@ -2578,7 +2603,7 @@
         chunk.forEach(id => {
           const light = allLights.find(l => l.id === id);
           if (light) {
-            const citizenUrl = `https://liff.line.me/2010313933-7q4q3WSR?lightId=${light.id}`;
+            const citizenUrl = getCitizenUrl(light.id);
 
             const card = document.createElement('div');
             card.className = 'print-sticker-card';
@@ -2621,7 +2646,7 @@
         chunk.forEach(id => {
           const light = allLights.find(l => l.id === id);
           if (light) {
-            const citizenUrl = `https://liff.line.me/2010313933-7q4q3WSR?lightId=${light.id}`;
+            const citizenUrl = getCitizenUrl(light.id);
             new QRCode(document.getElementById(`bulk-qr-${light.id}`), {
               text: citizenUrl,
               width: 150,
