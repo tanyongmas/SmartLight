@@ -1214,16 +1214,33 @@
 
             const showAddFriendFirstAndLogin = () => {
               Swal.fire({
-                title: 'กรุณาเพิ่มเพื่อนเพื่อใช้งานระบบ',
-                text: 'บัญชี LINE ของท่านยังไม่ได้เพิ่มเพื่อนกับ LINE OA "แจ้งซ่อมไฟ_ประชาชน" (@086kdhvh) กรุณาเพิ่มเพื่อนก่อนเข้าใช้งานระบบเพื่อให้สามารถติดตามสถานะการซ่อมและรับแจ้งเตือนผ่าน LINE ได้ครับ',
+                title: '<span style="font-size: 20px; font-weight: 700; color: #d97706; font-family: var(--font-family);">💡 จำเป็นต้องเพิ่มเพื่อน</span>',
+                html: `
+                  <div style="text-align: left; font-family: 'Inter', 'Noto Sans Thai', sans-serif; font-size: 14px; line-height: 1.6; color: #334155;">
+                    <p style="margin-bottom: 12px; font-weight: 500; font-size: 15px; color: #0f172a; text-align: center;">
+                      บัญชี LINE ของท่านยังไม่ได้เป็นเพื่อนกับ LINE OA
+                    </p>
+                    <div style="background: #f0f9ff; border-left: 4px solid #0284c7; padding: 12px; border-radius: 8px; margin-bottom: 14px;">
+                      <strong style="color: #0369a1; display: block; margin-bottom: 4px;">ประโยชน์ของการเพิ่มเพื่อน:</strong>
+                      <ul style="margin: 0; padding-left: 18px; color: #334155; font-size: 13px; display: flex; flex-direction: column; gap: 4px;">
+                        <li>รับการแจ้งเตือนความคืบหน้าเมื่อได้รับการแก้ไข</li>
+                        <li>ดูประวัติการแจ้งซ่อมของตนเองได้ตลอดเวลา</li>
+                        <li>สื่อสารกับเจ้าหน้าที่ผ่านห้องแชทได้โดยตรง</li>
+                      </ul>
+                    </div>
+                    <p style="font-size: 13px; color: #475569; margin-bottom: 4px; text-align: center;">
+                      กรุณากดเพิ่มเพื่อนกับ <strong>แจ้งซ่อมไฟ_ประชาชน (@086kdhvh)</strong>
+                    </p>
+                  </div>
+                `,
                 icon: 'warning',
                 showCancelButton: false,
                 confirmButtonText: '➕ เพิ่มเพื่อนทันที',
                 allowOutsideClick: false,
                 allowEscapeKey: false,
-                background: '#161c2d',
-                color: '#f3f4f6',
-                confirmButtonColor: '#10b981'
+                background: '#ffffff',
+                color: '#0f172a',
+                confirmButtonColor: '#16a34a'
               }).then((result) => {
                 if (result.isConfirmed) {
                   liff.openWindow({
@@ -1232,15 +1249,20 @@
                   });
                   // แสดงป๊อปอัปให้กดเพื่อเข้าล็อกอิน
                   Swal.fire({
-                    title: 'เข้าสู่ระบบแจ้งซ่อม',
-                    text: 'เมื่อกดเพิ่มเพื่อนในแอป LINE เรียบร้อยแล้ว กรุณากดปุ่มเพื่ออนุญาตสิทธิ์เข้าใช้งานระบบ',
+                    title: '<span style="font-size: 20px; font-weight: 700; color: #0284c7; font-family: var(--font-family);">🔑 อนุญาตสิทธิ์การใช้งาน</span>',
+                    html: `
+                      <div style="text-align: center; font-family: 'Inter', 'Noto Sans Thai', sans-serif; font-size: 14px; line-height: 1.6; color: #334155; padding: 6px 0;">
+                        <p style="margin-bottom: 8px; font-weight: 500; color: #0f172a;">เมื่อกดเพิ่มเพื่อนในแอป LINE สำเร็จแล้ว</p>
+                        <p style="font-size: 13px; color: #475569;">กรุณากดปุ่มด้านล่างเพื่ออนุญาตสิทธิ์เข้าใช้งานระบบ</p>
+                      </div>
+                    `,
                     icon: 'info',
                     showCancelButton: false,
                     confirmButtonText: '🔑 อนุญาตสิทธิ์และเข้าใช้งาน',
                     allowOutsideClick: false,
                     allowEscapeKey: false,
-                    background: '#161c2d',
-                    color: '#f3f4f6',
+                    background: '#ffffff',
+                    color: '#0f172a',
                     confirmButtonColor: '#0284c7'
                   }).then(() => {
                     liff.login();
@@ -1269,27 +1291,49 @@
                 if (mockFriendParam === 'true') {
                   updateFriendshipUI(true);
                   Swal.fire({
-                    title: 'ตรวจสอบสถานะผู้ใช้งานสำเร็จ',
-                    text: 'บัญชี LINE ของท่านเชื่อมต่อและเป็นเพื่อนกับระบบเรียบร้อยแล้ว',
+                    title: '<span style="font-size: 20px; font-weight: 700; color: #16a34a; font-family: var(--font-family);">🎉 เชื่อมต่อสำเร็จ</span>',
+                    html: `
+                      <div style="text-align: center; font-family: 'Inter', 'Noto Sans Thai', sans-serif; font-size: 14px; line-height: 1.6; color: #334155;">
+                        <p style="font-weight: 500; color: #0f172a; margin-bottom: 4px;">บัญชี LINE ของท่านเชื่อมต่อเรียบร้อยแล้ว</p>
+                        <p style="font-size: 12px; color: #475569;">ยินดีต้อนรับเข้าสู่ระบบแจ้งซ่อมไฟฟ้าสาธารณะ</p>
+                      </div>
+                    `,
                     icon: 'success',
-                    timer: 2000,
+                    timer: 2200,
                     showConfirmButton: false,
-                    background: '#161c2d',
-                    color: '#f3f4f6'
+                    background: '#ffffff',
+                    color: '#0f172a'
                   });
                 } else {
                   updateFriendshipUI(false);
                   Swal.fire({
-                    title: 'กรุณาเพิ่มเพื่อนเพื่อใช้งานระบบ',
-                    text: 'ท่านยังไม่ได้เพิ่มเพื่อนกับ LINE OA "แจ้งซ่อมไฟ_ประชาชน" (@086kdhvh) กรุณาเพิ่มเพื่อนเพื่อที่ระบบจะส่งข้อความยืนยันและอัปเดตความคืบหน้าการซ่อมกลับไปในห้องแชทของท่านได้ครับ',
+                    title: '<span style="font-size: 20px; font-weight: 700; color: #d97706; font-family: var(--font-family);">💡 จำเป็นต้องเพิ่มเพื่อน (โหมดจำลอง)</span>',
+                    html: `
+                      <div style="text-align: left; font-family: 'Inter', 'Noto Sans Thai', sans-serif; font-size: 14px; line-height: 1.6; color: #334155;">
+                        <p style="margin-bottom: 12px; font-weight: 500; font-size: 15px; color: #0f172a; text-align: center;">
+                          ท่านยังไม่ได้เพิ่มเพื่อนกับ LINE OA
+                        </p>
+                        <div style="background: #f0f9ff; border-left: 4px solid #0284c7; padding: 12px; border-radius: 8px; margin-bottom: 14px;">
+                          <strong style="color: #0369a1; display: block; margin-bottom: 4px;">ประโยชน์ของการเพิ่มเพื่อน:</strong>
+                          <ul style="margin: 0; padding-left: 18px; color: #334155; font-size: 13px; display: flex; flex-direction: column; gap: 4px;">
+                            <li>รับการแจ้งเตือนความคืบหน้าเมื่อได้รับการแก้ไข</li>
+                            <li>ดูประวัติการแจ้งซ่อมของตนเองได้ตลอดเวลา</li>
+                            <li>สื่อสารกับเจ้าหน้าที่ผ่านห้องแชทได้โดยตรง</li>
+                          </ul>
+                        </div>
+                        <p style="font-size: 13px; color: #475569; margin-bottom: 4px; text-align: center;">
+                          กรุณากดเพิ่มเพื่อนกับ <strong>แจ้งซ่อมไฟ_ประชาชน (@086kdhvh)</strong>
+                        </p>
+                      </div>
+                    `,
                     icon: 'warning',
                     showCancelButton: false,
                     confirmButtonText: '➕ เพิ่มเพื่อนทันที',
                     allowOutsideClick: false,
                     allowEscapeKey: false,
-                    background: '#161c2d',
-                    color: '#f3f4f6',
-                    confirmButtonColor: '#10b981'
+                    background: '#ffffff',
+                    color: '#0f172a',
+                    confirmButtonColor: '#16a34a'
                   }).then((result) => {
                     if (result.isConfirmed) {
                       liff.openWindow({
@@ -1297,15 +1341,20 @@
                         external: true
                       });
                       Swal.fire({
-                        title: 'ตรวจสอบการเพิ่มเพื่อน (จำลอง)',
-                        text: 'ระบบได้เปิดลิงก์แอดเพื่อนจำลองแล้ว กรุณากดตรวจสอบอีกครั้งเพื่อเข้าใช้งาน',
+                        title: '<span style="font-size: 20px; font-weight: 700; color: #0284c7; font-family: var(--font-family);">🔄 รอตรวจสอบการเพิ่มเพื่อน</span>',
+                        html: `
+                          <div style="text-align: center; font-family: 'Inter', 'Noto Sans Thai', sans-serif; font-size: 14px; line-height: 1.6; color: #334155; padding: 6px 0;">
+                            <p style="margin-bottom: 8px; font-weight: 500; color: #0f172a;">เมื่อกดเพิ่มเพื่อนเรียบร้อยแล้ว</p>
+                            <p style="font-size: 13px; color: #475569;">กรุณากดปุ่มด้านล่างเพื่อยืนยันการเป็นเพื่อนจำลอง</p>
+                          </div>
+                        `,
                         icon: 'info',
                         showCancelButton: false,
                         confirmButtonText: '🔄 ตรวจสอบสถานะการเป็นเพื่อน',
                         allowOutsideClick: false,
                         allowEscapeKey: false,
-                        background: '#161c2d',
-                        color: '#f3f4f6',
+                        background: '#ffffff',
+                        color: '#0f172a',
                         confirmButtonColor: '#0284c7'
                       }).then(() => {
                         const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + "?mockFriend=true";
@@ -1329,13 +1378,13 @@
           checkUrlParams();
           updateFriendshipUI(null);
           Swal.fire({
-            title: 'ระบบไม่สามารถเริ่มต้นไลน์ LIFF ได้',
+            title: '<span style="font-size: 18px; font-weight: 700; color: #dc2626; font-family: var(--font-family);">ระบบไม่สามารถเริ่มต้นไลน์ LIFF ได้</span>',
             text: 'รายละเอียดความผิดพลาด: ' + err.toString(),
             icon: 'error',
             confirmButtonText: 'ตกลง',
-            background: '#161c2d',
-            color: '#f3f4f6',
-            confirmButtonColor: '#ef4444'
+            background: '#ffffff',
+            color: '#0f172a',
+            confirmButtonColor: '#dc2626'
           });
         });
     }
@@ -1348,16 +1397,33 @@
             if (!data.friendFlag) {
               updateFriendshipUI(false);
               Swal.fire({
-                title: 'กรุณาเพิ่มเพื่อนเพื่อใช้งานระบบ',
-                text: 'ท่านยังไม่ได้เพิ่มเพื่อนกับ LINE OA "แจ้งซ่อมไฟ_ประชาชน" (@086kdhvh) กรุณาเพิ่มเพื่อนเพื่อที่ระบบจะส่งข้อความยืนยันและอัปเดตความคืบหน้าการซ่อมกลับไปในห้องแชทของท่านได้ครับ',
+                title: '<span style="font-size: 20px; font-weight: 700; color: #d97706; font-family: var(--font-family);">💡 จำเป็นต้องเพิ่มเพื่อน</span>',
+                html: `
+                  <div style="text-align: left; font-family: 'Inter', 'Noto Sans Thai', sans-serif; font-size: 14px; line-height: 1.6; color: #334155;">
+                    <p style="margin-bottom: 12px; font-weight: 500; font-size: 15px; color: #0f172a; text-align: center;">
+                      บัญชี LINE ของท่านยังไม่ได้เป็นเพื่อนกับ LINE OA
+                    </p>
+                    <div style="background: #f0f9ff; border-left: 4px solid #0284c7; padding: 12px; border-radius: 8px; margin-bottom: 14px;">
+                      <strong style="color: #0369a1; display: block; margin-bottom: 4px;">ประโยชน์ของการเพิ่มเพื่อน:</strong>
+                      <ul style="margin: 0; padding-left: 18px; color: #334155; font-size: 13px; display: flex; flex-direction: column; gap: 4px;">
+                        <li>รับการแจ้งเตือนความคืบหน้าเมื่อได้รับการแก้ไข</li>
+                        <li>ดูประวัติการแจ้งซ่อมของตนเองได้ตลอดเวลา</li>
+                        <li>สื่อสารกับเจ้าหน้าที่ผ่านห้องแชทได้โดยตรง</li>
+                      </ul>
+                    </div>
+                    <p style="font-size: 13px; color: #475569; margin-bottom: 4px; text-align: center;">
+                      กรุณากดเพิ่มเพื่อนกับ <strong>แจ้งซ่อมไฟ_ประชาชน (@086kdhvh)</strong>
+                    </p>
+                  </div>
+                `,
                 icon: 'warning',
                 showCancelButton: false,
                 confirmButtonText: '➕ เพิ่มเพื่อนทันที',
                 allowOutsideClick: false,
                 allowEscapeKey: false,
-                background: '#161c2d',
-                color: '#f3f4f6',
-                confirmButtonColor: '#10b981'
+                background: '#ffffff',
+                color: '#0f172a',
+                confirmButtonColor: '#16a34a'
               }).then((result) => {
                 if (result.isConfirmed) {
                   liff.openWindow({
@@ -1366,15 +1432,20 @@
                   });
                   // บังคับให้โหลดใหม่เพื่อเช็คความสัมพันธ์หลังจากเพิ่มเพื่อนแล้ว
                   Swal.fire({
-                    title: 'ตรวจสอบการเพิ่มเพื่อน',
-                    text: 'เมื่อกดเพิ่มเพื่อนเรียบร้อยแล้ว กรุณากดปุ่มเพื่อตรวจสอบสถานะอีกครั้งเพื่อเข้าใช้งาน',
+                    title: '<span style="font-size: 20px; font-weight: 700; color: #0284c7; font-family: var(--font-family);">🔄 รอตรวจสอบการเพิ่มเพื่อน</span>',
+                    html: `
+                      <div style="text-align: center; font-family: 'Inter', 'Noto Sans Thai', sans-serif; font-size: 14px; line-height: 1.6; color: #334155; padding: 6px 0;">
+                        <p style="margin-bottom: 8px; font-weight: 500; color: #0f172a;">เมื่อกดเพิ่มเพื่อนเรียบร้อยแล้ว</p>
+                        <p style="font-size: 13px; color: #475569;">กรุณากดปุ่มด้านล่างเพื่อตรวจสอบสถานะการเป็นเพื่อนอีกครั้ง</p>
+                      </div>
+                    `,
                     icon: 'info',
                     showCancelButton: false,
                     confirmButtonText: '🔄 ตรวจสอบสถานะการเป็นเพื่อน',
                     allowOutsideClick: false,
                     allowEscapeKey: false,
-                    background: '#161c2d',
-                    color: '#f3f4f6',
+                    background: '#ffffff',
+                    color: '#0f172a',
                     confirmButtonColor: '#0284c7'
                   }).then(() => {
                     location.reload();
@@ -1385,13 +1456,18 @@
               // ถ้าตรวจสอบว่าเป็นเพื่อนกันอยู่แล้ว อัปเดต UI ว่าเป็นเพื่อนแล้ว
               updateFriendshipUI(true);
               Swal.fire({
-                title: 'ตรวจสอบสถานะผู้ใช้งานสำเร็จ',
-                text: 'บัญชี LINE ของท่านเชื่อมต่อและเป็นเพื่อนกับระบบเรียบร้อยแล้ว',
+                title: '<span style="font-size: 20px; font-weight: 700; color: #16a34a; font-family: var(--font-family);">🎉 เชื่อมต่อสำเร็จ</span>',
+                html: `
+                  <div style="text-align: center; font-family: 'Inter', 'Noto Sans Thai', sans-serif; font-size: 14px; line-height: 1.6; color: #334155;">
+                    <p style="font-weight: 500; color: #0f172a; margin-bottom: 4px;">บัญชี LINE ของท่านเชื่อมต่อเรียบร้อยแล้ว</p>
+                    <p style="font-size: 12px; color: #475569;">ยินดีต้อนรับเข้าสู่ระบบแจ้งซ่อมไฟฟ้าสาธารณะ</p>
+                  </div>
+                `,
                 icon: 'success',
-                timer: 2000,
+                timer: 2200,
                 showConfirmButton: false,
-                background: '#161c2d',
-                color: '#f3f4f6'
+                background: '#ffffff',
+                color: '#0f172a'
               });
             }
           })
@@ -1401,48 +1477,53 @@
             const errStr = err.toString();
             if (errStr.includes("There is no login bot linked to this channel") || errStr.includes("login bot")) {
               Swal.fire({
-                title: 'ยังไม่ได้เชื่อมโยง LINE Login กับ LINE OA',
+                title: '<span style="font-size: 18px; font-weight: 700; color: #dc2626; font-family: var(--font-family);">ยังไม่ได้เชื่อมโยง LINE Login กับ LINE OA</span>',
                 html: `
-                  <div style="text-align: left; font-family: 'Noto Sans Thai', sans-serif; font-size: 14px; line-height: 1.6; color: #f3f4f6;">
-                    <p style="color: #ef4444; font-weight: bold; margin-bottom: 12px;">
+                  <div style="text-align: left; font-family: 'Inter', 'Noto Sans Thai', sans-serif; font-size: 14px; line-height: 1.6; color: #334155;">
+                    <p style="color: #dc2626; font-weight: bold; margin-bottom: 12px;">
                       ⚠️ พบข้อผิดพลาดการเชื่อมต่อช่องทางไลน์ (สำหรับผู้พัฒนาระบบ):
                     </p>
                     <p style="margin-bottom: 8px;">
                       <strong>รายละเอียดความผิดพลาด:</strong><br>
-                      <span style="color: #cbd5e1; font-family: monospace;">${errStr}</span>
+                      <span style="color: #475569; font-family: monospace; font-size: 12px;">${errStr}</span>
                     </p>
                     <p style="margin-bottom: 12px;">
                       สาเหตุเกิดจาก <strong>LINE Login Channel</strong> (ที่มีแอป LIFF นี้อยู่) ยังไม่ได้เชื่อมโยงเข้ากับ <strong>LINE Official Account (Bot)</strong> ของคุณ ทำให้ระบบไม่สามารถใช้ฟังก์ชันตรวจสอบความเป็นเพื่อนได้
                     </p>
-                    <p style="font-weight: 600; color: #10b981; margin-bottom: 6px;">วิธีการแก้ไขสำหรับผู้ดูแลระบบ:</p>
-                    <ol style="padding-left: 20px; display: flex; flex-direction: column; gap: 6px; color: #d1d5db;">
-                      <li>เข้าสู่ระบบ <a href="https://developers.line.biz/" target="_blank" style="color: #38bdf8; text-decoration: underline;">LINE Developers Console</a></li>
+                    <p style="font-weight: 600; color: #16a34a; margin-bottom: 6px;">วิธีการแก้ไขสำหรับผู้ดูแลระบบ:</p>
+                    <ol style="padding-left: 20px; display: flex; flex-direction: column; gap: 6px; color: #475569; font-size: 13px;">
+                      <li>เข้าสู่ระบบ <a href="https://developers.line.biz/" target="_blank" style="color: #0284c7; text-decoration: underline;">LINE Developers Console</a></li>
                       <li>เลือก <strong>Provider</strong> ของคุณ และคลิกเข้าไปที่ช่อง <strong>LINE Login Channel</strong> ที่ใช้งาน</li>
                       <li>คลิกแท็บ <strong>LINE Login settings</strong></li>
                       <li>เลื่อนลงไปด้านล่างสุดที่หัวข้อ <strong>Linked OA</strong> (หรือ Bot link)</li>
                       <li>คลิกปุ่ม <strong>Edit</strong> เลือก LINE Official Account (Bot) ของคุณ (<strong>@086kdhvh</strong>)</li>
                       <li>กดปุ่ม <strong>Update</strong> เพื่อบันทึกข้อมูล</li>
                     </ol>
-                    <p style="margin-top: 14px; color: #94a3b8; font-size: 12px; text-align: center;">
+                    <p style="margin-top: 14px; color: #64748b; font-size: 12px; text-align: center;">
                       *หลังจากแก้ไขแล้ว ให้ปิดและเปิดแอปใหม่อีกครั้ง
                     </p>
                   </div>
                 `,
                 icon: 'error',
                 confirmButtonText: 'ตกลง',
-                background: '#161c2d',
-                color: '#f3f4f6',
-                confirmButtonColor: '#ef4444'
+                background: '#ffffff',
+                color: '#0f172a',
+                confirmButtonColor: '#dc2626'
               });
             } else {
               Swal.fire({
-                title: 'ระบบไม่สามารถตรวจสอบความสัมพันธ์กับไลน์โอเอได้',
-                text: 'รายละเอียดความผิดพลาด: ' + errStr,
+                title: '<span style="font-size: 18px; font-weight: 700; color: #dc2626; font-family: var(--font-family);">ระบบไม่สามารถตรวจสอบความสัมพันธ์กับไลน์โอเอได้</span>',
+                html: `
+                  <div style="text-align: center; font-family: 'Inter', 'Noto Sans Thai', sans-serif; font-size: 14px; color: #334155;">
+                    <p>รายละเอียดความผิดพลาด:</p>
+                    <p style="color: #dc2626; font-family: monospace; margin-top: 6px; font-size: 12px;">${errStr}</p>
+                  </div>
+                `,
                 icon: 'error',
                 confirmButtonText: 'ตกลง',
-                background: '#161c2d',
-                color: '#f3f4f6',
-                confirmButtonColor: '#ef4444'
+                background: '#ffffff',
+                color: '#0f172a',
+                confirmButtonColor: '#dc2626'
               });
             }
           });
@@ -2068,15 +2149,29 @@
             const friendship = await liff.getFriendship();
             if (!friendship.friendFlag) {
               Swal.fire({
-                title: 'กรุณาเพิ่มเพื่อนก่อนส่งข้อมูล',
-                text: 'บัญชี LINE ของท่านยังไม่ได้เพิ่มเพื่อนกับ LINE OA "แจ้งซ่อมไฟ_ประชาชน" (@086kdhvh) กรุณาเพิ่มเพื่อนเพื่อให้ระบบสามารถส่งข้อความยืนยันและอัปเดตความคืบหน้ากลับไปในห้องแชทได้ครับ',
+                title: '<span style="font-size: 20px; font-weight: 700; color: #d97706; font-family: var(--font-family);">💡 จำเป็นต้องเพิ่มเพื่อนก่อน</span>',
+                html: `
+                  <div style="text-align: left; font-family: 'Inter', 'Noto Sans Thai', sans-serif; font-size: 14px; line-height: 1.6; color: #334155;">
+                    <p style="margin-bottom: 12px; font-weight: 500; font-size: 15px; color: #0f172a; text-align: center;">
+                      ไม่สามารถส่งรายงานแจ้งซ่อมได้
+                    </p>
+                    <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 12px; border-radius: 8px; margin-bottom: 14px;">
+                      <p style="margin: 0; color: #b91c1c; font-size: 13px;">
+                        คุณจำเป็นต้องเป็นเพื่อนกับ LINE OA <strong>(@086kdhvh)</strong> เพื่อให้บอตสามารถส่งข้อความแจ้งเตือนผลการซ่อม และให้คุณติดตามความคืบหน้าได้สำเร็จ
+                      </p>
+                    </div>
+                    <p style="font-size: 13px; color: #475569; margin-bottom: 4px; text-align: center;">
+                      กรุณากดเพิ่มเพื่อนก่อนกดส่งรายงานแจ้งซ่อมครับ
+                    </p>
+                  </div>
+                `,
                 icon: 'warning',
                 showCancelButton: false,
-                confirmButtonText: '➕ เพิ่มเพื่อนตอนนี้',
+                confirmButtonText: '➕ เพิ่มเพื่อนทันที',
                 allowOutsideClick: false,
-                background: '#161c2d',
-                color: '#f3f4f6',
-                confirmButtonColor: '#10b981'
+                background: '#ffffff',
+                color: '#0f172a',
+                confirmButtonColor: '#16a34a'
               }).then((result) => {
                 if (result.isConfirmed) {
                   liff.openWindow({
@@ -2161,13 +2256,13 @@
           sendLineCitizenSubmitNotification(reportData);
 
           Swal.fire({
-            title: 'ส่งรายงานสำเร็จ!',
+            title: '<span style="font-size: 20px; font-weight: 700; color: #16a34a; font-family: var(--font-family);">ส่งรายงานสำเร็จ!</span>',
             text: 'บันทึกจำลองข้อมูลแจ้งเสียพร้อมรูปภาพเสร็จเรียบร้อย (โหมดเดโม)',
             icon: 'success',
             confirmButtonText: 'ตกลง',
-            background: '#161c2d',
-            color: '#f3f4f6',
-            confirmButtonColor: '#06b6d4'
+            background: '#ffffff',
+            color: '#0f172a',
+            confirmButtonColor: '#0284c7'
           });
           resetImageUpload();
           closeReportPanel();
@@ -2227,13 +2322,13 @@
           });
 
           Swal.fire({
-            title: 'ส่งรายงานสำเร็จ!',
+            title: '<span style="font-size: 20px; font-weight: 700; color: #16a34a; font-family: var(--font-family);">ส่งรายงานสำเร็จ!</span>',
             text: 'ขอบพระคุณสำหรับข้อมูล เทศบาลได้รับเรื่องแจ้งเสียเสาไฟและรูปภาพเรียบร้อยแล้วและจะรีบดำเนินการซ่อมแซม',
             icon: 'success',
             confirmButtonText: 'ตกลง',
-            background: '#161c2d',
-            color: '#f3f4f6',
-            confirmButtonColor: '#10b981'
+            background: '#ffffff',
+            color: '#0f172a',
+            confirmButtonColor: '#16a34a'
           });
           resetImageUpload();
           closeReportPanel();
@@ -2241,13 +2336,13 @@
       } catch (error) {
         console.error("Error submitting report:", error);
         Swal.fire({
-          title: 'เกิดข้อผิดพลาด!',
+          title: '<span style="font-size: 20px; font-weight: 700; color: #dc2626; font-family: var(--font-family);">เกิดข้อผิดพลาด!</span>',
           text: error.message || 'ไม่สามารถอัปโหลดรูปภาพหรือส่งข้อมูลการแจ้งเสียได้ กรุณาลองใหม่อีกครั้ง',
           icon: 'error',
           confirmButtonText: 'ตกลง',
-          background: '#161c2d',
-          color: '#f3f4f6',
-          confirmButtonColor: '#ef4444'
+          background: '#ffffff',
+          color: '#0f172a',
+          confirmButtonColor: '#dc2626'
         });
       }
     });
