@@ -2143,6 +2143,52 @@
         const targetLight = allLights.find(l => l.id === lightId);
         if (!targetLight) return;
 
+        // ตรวจสอบการส่งแจ้งซ่อมหลอดเดิมซ้ำ (ถ้าสถานะไม่ใช่ working แสดงว่าได้รับการรายงานแล้ว)
+        if (targetLight.status === 'broken' || targetLight.status === 'pending') {
+          const statusLabel = targetLight.status === 'pending' ? 'กำลังดำเนินการซ่อมแซม' : 'ได้รับเรื่องแจ้งซ่อมแล้ว (รอดำเนินการ)';
+          const badgeClass = targetLight.status === 'pending' ? 'badge-pending' : 'badge-broken';
+          const statusColor = targetLight.status === 'pending' ? '#d97706' : '#dc2626';
+
+          Swal.fire({
+            title: `<span style="font-size: 20px; font-weight: 700; color: ${statusColor}; font-family: var(--font-family);">💡 แจ้งซ่อมซ้ำซ้อน</span>`,
+            html: `
+              <div style="text-align: left; font-family: 'Inter', 'Noto Sans Thai', sans-serif; font-size: 14px; line-height: 1.6; color: #334155; padding: 4px 0;">
+                <div style="background: #f8fafc; border: 1px solid var(--border-light); padding: 14px; border-radius: 12px; margin-bottom: 14px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.01);">
+                  <div style="font-weight: 700; font-size: 15px; color: var(--text-main); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-lightbulb" style="color: var(--accent-cyan);"></i> 
+                    รหัสเสาไฟ: ${targetLight.code}
+                  </div>
+                  <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">
+                    <i class="fa-solid fa-location-dot" style="margin-right: 4px; color: var(--text-muted);"></i> ${targetLight.name}
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">สถานะปัจจุบัน:</span>
+                    <span class="badge ${badgeClass}" style="font-size: 11px; padding: 2px 8px;">${statusLabel}</span>
+                  </div>
+                </div>
+                
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                  <p style="margin: 0; color: #b45309; font-size: 13.5px; font-weight: 600; line-height: 1.5;">
+                    <i class="fa-solid fa-circle-info" style="margin-right: 6px;"></i>
+                    หลอดไฟนี้ (${targetLight.code}) กำลังอยู่ในขั้นตอนดำเนินการซ่อมแล้ว
+                  </p>
+                </div>
+                <p style="font-size: 13px; color: #475569; text-align: center; margin-top: 14px; margin-bottom: 0;">
+                  ขณะนี้ระบบได้รับเรื่องแจ้งจากพลเมืองดีท่านอื่นเรียบร้อยแล้ว เจ้าหน้าที่กำลังเร่งดำเนินการตรวจสอบและแก้ไข ขออภัยในความไม่สะดวกครับ
+                </p>
+              </div>
+            `,
+            icon: 'warning',
+            confirmButtonText: '<i class="fa-solid fa-circle-check" style="margin-right: 6px;"></i>รับทราบ',
+            confirmButtonColor: '#0284c7',
+            background: '#ffffff',
+            color: '#0f172a',
+            allowOutsideClick: true
+          });
+          return; // สกัดไม่ให้ส่งข้อมูลซ้ำ
+        }
+
+
         // ตรวจสอบสถานะการเพิ่มเพื่อนใน LINE
         if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
           try {
