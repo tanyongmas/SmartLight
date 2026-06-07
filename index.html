@@ -1210,10 +1210,47 @@
               window.location.hostname.startsWith('10.') ||
               window.location.hostname === '';
 
+            const showAddFriendFirstAndLogin = () => {
+              Swal.fire({
+                title: 'กรุณาเพิ่มเพื่อนเพื่อใช้งานระบบ',
+                text: 'บัญชี LINE ของท่านยังไม่ได้เพิ่มเพื่อนกับ LINE OA "แจ้งซ่อมไฟ_ประชาชน" (@086kdhvh) กรุณาเพิ่มเพื่อนก่อนเข้าใช้งานระบบเพื่อให้สามารถติดตามสถานะการซ่อมและรับแจ้งเตือนผ่าน LINE ได้ครับ',
+                icon: 'warning',
+                showCancelButton: false,
+                confirmButtonText: '➕ เพิ่มเพื่อนทันที',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                background: '#161c2d',
+                color: '#f3f4f6',
+                confirmButtonColor: '#10b981'
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  liff.openWindow({
+                    url: 'https://line.me/R/ti/p/%40086kdhvh',
+                    external: true
+                  });
+                  // แสดงป๊อปอัปให้กดเพื่อเข้าล็อกอิน
+                  Swal.fire({
+                    title: 'เข้าสู่ระบบแจ้งซ่อม',
+                    text: 'เมื่อกดเพิ่มเพื่อนในแอป LINE เรียบร้อยแล้ว กรุณากดปุ่มเพื่ออนุญาตสิทธิ์เข้าใช้งานระบบ',
+                    icon: 'info',
+                    showCancelButton: false,
+                    confirmButtonText: '🔑 อนุญาตสิทธิ์และเข้าใช้งาน',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    background: '#161c2d',
+                    color: '#f3f4f6',
+                    confirmButtonColor: '#0284c7'
+                  }).then(() => {
+                    liff.login();
+                  });
+                }
+              });
+            };
+
             if (liff.isInClient()) {
-              liff.login();
+              showAddFriendFirstAndLogin();
             } else if (!isLocalFile && !isLocalHost) {
-              liff.login();
+              showAddFriendFirstAndLogin();
             } else {
               console.log("Local testing detected. Skipping auto-login redirect.");
               
