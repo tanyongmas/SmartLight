@@ -15,22 +15,28 @@ let isUrlParamsChecked = false;
 // ==========================================
 // 1. การเริ่มต้นระบบ (Initialization)
 // ==========================================
-window.addEventListener('DOMContentLoaded', () => {
-  // ซ่อนหน้าจอโหลดดิง
-  setTimeout(() => {
-    const loader = document.getElementById('loader');
-    if (loader) {
-      loader.style.opacity = 0;
-      setTimeout(() => loader.style.display = 'none', 500);
-    }
-  }, 600);
+function startCitizenApp() {
+  // ซ่อนหน้าจอโหลดดิงทันทีเพื่อป้องกันการหมุนค้าง
+  const loader = document.getElementById('loader');
+  if (loader) {
+    loader.style.opacity = 0;
+    setTimeout(() => {
+      loader.style.display = 'none';
+    }, 500);
+  }
 
   initFirebase();
   initMap();
   loadLights();
   initLiff();
   initImageUploadListener();
-});
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', startCitizenApp);
+} else {
+  startCitizenApp();
+}
 
 // ==========================================
 // 2. LINE Messaging API Notifications

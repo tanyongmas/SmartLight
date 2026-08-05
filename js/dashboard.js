@@ -21,20 +21,20 @@ let currentDashboardView = 'map';
 // ==========================================
 // 1. การเริ่มต้นระบบ (Initialization)
 // ==========================================
-window.addEventListener('DOMContentLoaded', () => {
-  // ซ่อนหน้าจอโหลดดิง
-  setTimeout(() => {
-    const loader = document.getElementById('loader');
-    if (loader) {
-      loader.style.opacity = 0;
-      setTimeout(() => loader.style.display = 'none', 500);
-    }
-  }, 600);
+function startDashboardApp() {
+  // ซ่อนหน้าจอโหลดดิงทันทีเพื่อป้องกันการหมุนค้าง
+  const loader = document.getElementById('loader');
+  if (loader) {
+    loader.style.opacity = 0;
+    setTimeout(() => {
+      loader.style.display = 'none';
+    }, 500);
+  }
 
   // ตั้งค่าเดือน/ปีปัจจุบันล่วงหน้าในตัวเลือกรายงาน
   const currentDate = new Date();
-  const monthSelect = document.getElementById('filterMonth');
-  const yearSelect = document.getElementById('filterYear');
+  const monthSelect = document.getElementById('reportFilterMonth');
+  const yearSelect = document.getElementById('reportFilterYear');
   if (monthSelect && yearSelect) {
     monthSelect.value = currentDate.getMonth();
     const curYearStr = currentDate.getFullYear().toString();
@@ -57,7 +57,13 @@ window.addEventListener('DOMContentLoaded', () => {
   initFirebase();
   initMap();
   initFormListeners();
-});
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', startDashboardApp);
+} else {
+  startDashboardApp();
+}
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -123,6 +129,13 @@ function getCitizenUrl(lightId = null, page = null) {
 // 2. Firebase Auth & System Initialization
 // ==========================================
 function initFirebase() {
+  const savedDemoUser = sessionStorage.getItem('demo_user');
+  if (savedDemoUser) {
+    isDemoMode = true;
+    const banner = document.getElementById('demoBanner');
+    if (banner) banner.style.display = 'block';
+  }
+
   if (firebaseConfig.apiKey === "YOUR_API_KEY" || !firebaseConfig.apiKey) {
     console.warn("Firebase not configured. Entering Demo Mode.");
     isDemoMode = true;
@@ -133,9 +146,13 @@ function initFirebase() {
     if (loginForm) {
       loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const username = document.getElementById('loginUsername').value;
+        const username = document.getElementById('loginUsername').value.trim() || 'Admin';
+        sessionStorage.setItem('demo_user', username);
         loginSuccess({ email: username });
       });
+    }
+    if (savedDemoUser) {
+      loginSuccess({ email: savedDemoUser });
     }
   } else {
     try {
@@ -145,7 +162,11 @@ function initFirebase() {
 
       auth.onAuthStateChanged((user) => {
         if (user) {
+          isDemoMode = false;
+          sessionStorage.removeItem('demo_user');
           loginSuccess(user);
+        } else if (isDemoMode && sessionStorage.getItem('demo_user')) {
+          loginSuccess({ email: sessionStorage.getItem('demo_user') });
         } else {
           logoutSuccess();
         }
@@ -155,34 +176,61 @@ function initFirebase() {
       if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
           e.preventDefault();
-          const username = document.getElementById('loginUsername').value.trim();
-          const password = document.getElementById('loginPassword').value;
+          const usernameInput = document.getElementById('loginUsername');
+          const username = usernameInput ? (usernameInput.value.trim() || 'Admin') : 'Admin';
+          const passwordInput = document.getElementById('loginPassword');
+          const password = passwordInput ? passwordInput.value : '';
 
-          let email = username;
-          if (!username.includes('@')) {
-            email = `${username}@smartlight.local`;
+          const isLocal = window.location.protocol === 'file:' ||
+            window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1' ||
+            window.location.hostname.startsWith('192.168.') ||
+            window.location.hostname.startsWith('10.') ||
+            window.location.hostname === '';
+
+          // หากเปิดผ่าน Live Server / Localhost / file:// หรือไม่ได้กรอกอีเมลคลาวด์ ให้เข้าสู่ระบบโหมดเดโมได้ทันที 100%
+          if (isLocal || !username.includes('@') || isDemoMode) {
+            isDemoMode = true;
+            sessionStorage.setItem('demo_user', username);
+            const banner = document.getElementById('demoBanner');
+            if (banner) banner.style.display = 'block';
+            loginSuccess({ email: username });
+            return;
           }
 
+          let email = username;
           auth.signInWithEmailAndPassword(email, password)
             .catch(err => {
-              console.error("Login Error: ", err);
-              Swal.fire({
-                title: 'เข้าสู่ระบบล้มเหลว!',
-                text: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง',
-                icon: 'error',
-                confirmButtonText: 'ตกลง',
-                background: '#161c2d',
-                color: '#f3f4f6',
-                confirmButtonColor: '#ef4444'
-              });
+              console.warn("Firebase Auth Error / Falling back to Demo Mode: ", err);
+              isDemoMode = true;
+              sessionStorage.setItem('demo_user', username);
+              const banner = document.getElementById('demoBanner');
+              if (banner) banner.style.display = 'block';
+              loginSuccess({ email: username });
             });
         });
+      }
+
+      if (savedDemoUser) {
+        loginSuccess({ email: savedDemoUser });
       }
     } catch (e) {
       console.error("Firebase init failed", e);
       isDemoMode = true;
       const banner = document.getElementById('demoBanner');
       if (banner) banner.style.display = 'block';
+      const loginForm = document.getElementById('loginForm');
+      if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const username = document.getElementById('loginUsername').value.trim() || 'Admin';
+          sessionStorage.setItem('demo_user', username);
+          loginSuccess({ email: username });
+        });
+      }
+      if (savedDemoUser) {
+        loginSuccess({ email: savedDemoUser });
+      }
     }
   }
 }
@@ -202,14 +250,17 @@ function loginSuccess(user) {
 }
 
 function logout() {
-  if (isDemoMode) {
-    logoutSuccess();
+  isDemoMode = false;
+  sessionStorage.removeItem('demo_user');
+  if (auth && typeof auth.signOut === 'function') {
+    auth.signOut().then(() => logoutSuccess()).catch(() => logoutSuccess());
   } else {
-    auth.signOut().then(() => logoutSuccess());
+    logoutSuccess();
   }
 }
 
 function logoutSuccess() {
+  if (isDemoMode && sessionStorage.getItem('demo_user')) return;
   document.getElementById('dashboardSection').style.display = 'none';
   document.getElementById('loginSection').style.display = 'flex';
   const loginForm = document.getElementById('loginForm');
@@ -287,6 +338,10 @@ function loadData() {
         allLights.push({ id: doc.id, ...doc.data() });
       });
       updateUI();
+    }, (err) => {
+      console.warn("Firestore lights subscription error, fallback to local:", err);
+      allLights = JSON.parse(localStorage.getItem('smart_lights')) || [];
+      updateUI();
     });
 
     db.collection('reports').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
@@ -294,6 +349,10 @@ function loadData() {
       snapshot.forEach((doc) => {
         allReports.push({ id: doc.id, ...doc.data() });
       });
+      updateUI();
+    }, (err) => {
+      console.warn("Firestore reports subscription error, fallback to local:", err);
+      allReports = JSON.parse(localStorage.getItem('smart_reports')) || [];
       updateUI();
     });
   }

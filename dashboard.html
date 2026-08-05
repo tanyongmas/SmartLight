@@ -970,6 +970,15 @@
   <div class="loader-container" id="loader">
     <div class="spinner"></div>
   </div>
+  <script>
+    setTimeout(function() {
+      var l = document.getElementById('loader');
+      if (l) {
+        l.style.opacity = '0';
+        setTimeout(function() { l.style.display = 'none'; }, 400);
+      }
+    }, 800);
+  </script>
 
   <!-- แบนเนอร์จำลองสถานะเดโม -->
   <div class="demo-banner" id="demoBanner">
