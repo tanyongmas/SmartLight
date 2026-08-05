@@ -475,21 +475,34 @@
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
         grid-template-rows: 1fr !important;
-        gap: 10mm !important;
+        gap: 14mm !important;
         width: 100% !important;
         height: 100vh !important;
         max-height: 100vh !important;
         box-sizing: border-box !important;
-        padding: 10mm 15mm !important;
+        padding: 10mm 12mm !important;
         page-break-after: always !important;
         break-after: page !important;
         overflow: hidden !important;
+        position: relative !important;
+      }
+
+      /* เส้นแนวรอยตัดแบ่งครึ่งกระดาษตรงกลาง (Vertical Cut Line) */
+      .print-page::after {
+        content: "" !important;
+        position: absolute !important;
+        top: 6mm !important;
+        bottom: 6mm !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        border-left: 1.5px dashed #94a3b8 !important;
+        z-index: 10 !important;
       }
 
       .print-sticker-card {
-        border: 2px dashed #000000 !important;
-        border-radius: 12px !important;
-        padding: 15px !important;
+        border: 2.5px dashed #0f172a !important;
+        border-radius: 16px !important;
+        padding: 16px 20px !important;
         text-align: center !important;
         background: #ffffff !important;
         page-break-inside: avoid !important;
@@ -497,10 +510,10 @@
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: space-between !important;
         box-sizing: border-box !important;
         height: 100% !important;
-        /* ปล่อยให้ขยายเต็มช่องตาราง */
+        width: 100% !important;
       }
     }
 
