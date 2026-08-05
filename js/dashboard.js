@@ -672,19 +672,18 @@ function sendLineUserUpdateNotification(reportId, newStatus) {
     return;
   }
 
-  let reportData = null;
   if (isDemoMode) {
-    const localReports = JSON.parse(localStorage.getItem('smart_reports')) || [];
-    reportData = localReports.find(r => r.id === reportId);
     if (!reportData) return;
     triggerLineNotification(reportData, newStatus);
   } else {
-    db.collection('reports').doc(reportId).get().then(doc => {
-      if (doc.exists) {
-        reportData = doc.data();
-        triggerLineNotification(reportData, newStatus);
-      }
-    }).catch(err => console.error("Error getting report for push notification:", err));
+    if (db) {
+      db.collection('reports').doc(reportId).get().then(doc => {
+        if (doc.exists) {
+          reportData = doc.data();
+          triggerLineNotification(reportData, newStatus);
+        }
+      }).catch(err => console.error("Error getting report for push notification:", err));
+    }
   }
 }
 
