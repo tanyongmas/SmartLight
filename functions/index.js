@@ -36,7 +36,8 @@ function getStatusLabel(status) {
   return status;
 }
 
-// 1. Cloud Function สำหรับแจ้งเตือนเมื่อประชาชนส่งรายงานแจ้งซ่อมใหม่ (ส่งหาประชาชน + บรอดแคสต์หาเจ้าหน้าที่)
+// 1. Cloud Function สำหรับแจ้งเตือนเมื่อประชาชนส่งรายงานแจ้งซ่อมใหม่
+// (ส่งยืนยันหาประชาชนผ่าน Citizen Token + ส่งบรอดแคสต์หาเจ้าหน้าที่ผ่าน Staff Token)
 exports.sendLineNewReportNotification = onRequest({
   region: "asia-southeast1",
   cors: true
@@ -51,15 +52,17 @@ exports.sendLineNewReportNotification = onRequest({
       return res.status(400).send({ error: "Missing reportData" });
     }
 
-    const lineToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-    if (!lineToken) {
-      logger.error("LINE_CHANNEL_ACCESS_TOKEN is not defined in .env");
+    const citizenToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+    const staffToken = process.env.LINE_STAFF_ACCESS_TOKEN || citizenToken;
+
+    if (!citizenToken && !staffToken) {
+      logger.error("Neither LINE_CHANNEL_ACCESS_TOKEN nor LINE_STAFF_ACCESS_TOKEN is defined in .env");
       return res.status(500).send({ error: "Server Configuration Error: Missing Token" });
     }
 
     const dashboardUrl = "https://tanyongmas.github.io/SmartLight/dashboard.html";
 
-    // 1.1 สร้าง Flex Message สำหรับส่งให้เจ้าหน้าที่ (Staff Broadcast Notification)
+    // 1.1 โครงสร้าง Flex Message แจ้งเตือนเข้าไลน์เจ้าหน้าที่
     const flexStaffMessage = {
       type: "bubble",
       styles: {
@@ -151,7 +154,7 @@ exports.sendLineNewReportNotification = onRequest({
       };
     }
 
-    // 1.2 สร้าง Flex Message สำหรับส่งยืนยันให้ประชาชน (Citizen Submit Confirmation)
+    // 1.2 โครงสร้าง Flex Message แจ้งยืนยันหาประชาชน
     const flexCitizenMessage = {
       type: "bubble",
       styles: {
@@ -281,9 +284,9 @@ exports.sendLineNewReportNotification = onRequest({
       };
     }
 
-    // 1.3 ส่ง Push Message หาประชาชนผู้แจ้ง (หากเป็น real lineUserId)
+    // 1.3 ส่ง Push Message หาประชาชนผู้แจ้ง (ใช้ LINE_CHANNEL_ACCESS_TOKEN ฝั่งประชาชน)
     const targetUserId = reportData.lineUserId;
-    if (targetUserId && !targetUserId.startsWith("MOCK_")) {
+    if (citizenToken && targetUserId && !targetUserId.startsWith("MOCK_")) {
       const citizenPayload = {
         to: targetUserId,
         messages: [{
@@ -293,21 +296,23 @@ exports.sendLineNewReportNotification = onRequest({
         }]
       };
       await axios.post("https://api.line.me/v2/bot/message/push", citizenPayload, {
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${lineToken}` }
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${citizenToken}` }
       }).catch(err => logger.error("Citizen push submit error:", err.response ? err.response.data : err.message));
     }
 
-    // 1.4 บรอดแคสต์แจ้งเตือนเข้าห้องเจ้าหน้าที่
-    const staffPayload = {
-      messages: [{
-        type: "flex",
-        altText: `🚨 แจ้งซ่อมใหม่: ${reportData.lightCode || ""}`,
-        contents: flexStaffMessage
-      }]
-    };
-    await axios.post("https://api.line.me/v2/bot/message/broadcast", staffPayload, {
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${lineToken}` }
-    }).catch(err => logger.error("Staff broadcast new report error:", err.response ? err.response.data : err.message));
+    // 1.4 บรอดแคสต์แจ้งเตือนเข้าห้องเจ้าหน้าที่ (ใช้ LINE_STAFF_ACCESS_TOKEN ฝั่งเจ้าหน้าที่)
+    if (staffToken) {
+      const staffPayload = {
+        messages: [{
+          type: "flex",
+          altText: `🚨 แจ้งซ่อมใหม่: ${reportData.lightCode || ""}`,
+          contents: flexStaffMessage
+        }]
+      };
+      await axios.post("https://api.line.me/v2/bot/message/broadcast", staffPayload, {
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${staffToken}` }
+      }).catch(err => logger.error("Staff broadcast new report error:", err.response ? err.response.data : err.message));
+    }
 
     return res.status(200).send({ success: true });
   } catch (err) {
