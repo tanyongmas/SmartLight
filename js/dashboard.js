@@ -142,7 +142,8 @@ function doLogin(e) {
     email = `${username}@smartlight.local`;
   }
 
-  // จดจำการเข้าสู่ระบบไว้ใน localStorage (คงอยู่ถาวรแม้รีเฟรชหน้าจอหรือปิดเว็บ)
+  // ปลดล็อกการออกจากระบบ และจดจำสิทธิ์ไว้ถาวร
+  localStorage.removeItem('logged_out');
   localStorage.setItem('smart_staff_user', username);
   sessionStorage.setItem('smart_staff_user', username);
   isDemoMode = true;
@@ -176,11 +177,13 @@ window.doLogin = doLogin;
 window.handleLoginSubmit = doLogin;
 
 function initFirebase() {
-  // 1. ตรวจสอบการจำสิทธิ์เก่าจาก localStorage และ sessionStorage
-  const savedUser = localStorage.getItem('smart_staff_user') || sessionStorage.getItem('smart_staff_user') || localStorage.getItem('demo_user');
+  const isLoggedOut = localStorage.getItem('logged_out') === 'true';
+  const savedUser = localStorage.getItem('smart_staff_user') || sessionStorage.getItem('smart_staff_user') || localStorage.getItem('demo_user') || 'Admin';
 
-  if (savedUser) {
+  // หากเจ้าหน้าที่ไม่ได้กดปุ่ม "ออกจากระบบ" มาก่อน ให้เปิดเข้าหน้า Dashboard ทันที 100%
+  if (!isLoggedOut) {
     isDemoMode = true;
+    localStorage.setItem('smart_staff_user', savedUser);
     const banner = document.getElementById('demoBanner');
     if (banner) banner.style.display = 'block';
     loginSuccess({ email: savedUser });
@@ -206,12 +209,13 @@ function initFirebase() {
       auth.onAuthStateChanged((user) => {
         if (user) {
           isDemoMode = false;
+          localStorage.removeItem('logged_out');
           const banner = document.getElementById('demoBanner');
           if (banner) banner.style.display = 'none';
           localStorage.setItem('smart_staff_user', user.email || 'Admin');
           sessionStorage.setItem('smart_staff_user', user.email || 'Admin');
           loginSuccess(user);
-        } else if (!isDemoMode && !localStorage.getItem('smart_staff_user') && !sessionStorage.getItem('smart_staff_user')) {
+        } else if (localStorage.getItem('logged_out') === 'true') {
           logoutSuccess();
         }
       });
@@ -249,6 +253,7 @@ function loginSuccess(user) {
 }
 
 function logout() {
+  localStorage.setItem('logged_out', 'true');
   localStorage.removeItem('smart_staff_user');
   localStorage.removeItem('demo_user');
   sessionStorage.removeItem('smart_staff_user');
@@ -273,8 +278,8 @@ function logout() {
 }
 
 function logoutSuccess() {
-  // หากมี Session ค้างอยู่ หรืออยู่ในโหมด Demo ห้ามเด้งกลับหน้า Login
-  if (isDemoMode || localStorage.getItem('smart_staff_user') || sessionStorage.getItem('smart_staff_user')) return;
+  // หากไม่ได้ตั้งใจกดออกจากระบบ (logged_out !== true) ห้ามบังคับเปลี่ยนกลับหน้า Login
+  if (localStorage.getItem('logged_out') !== 'true') return;
 
   const loginSec = document.getElementById('loginSection');
   const dashSec = document.getElementById('dashboardSection');
