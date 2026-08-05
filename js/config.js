@@ -23,8 +23,10 @@ const firebaseConfig = {
 // การส่งข้อความ LINE Push Notification ถูกปรับให้เรียกผ่าน Backend (Firebase Cloud Functions / API Gateway)
 // ห้ามใส่ Channel Access Token ในโค้ดส่วนหน้าบ้าน (Client-side) เด็ดขาด
 const lineConfig = {
-  // Endpoint สำหรับส่งแจ้งเตือนผ่าน Firebase Cloud Function (ปลอดภัย 100%)
+  // Endpoint สำหรับส่งแจ้งเตือนเมื่ออัปเดตสถานะ (เจ้าหน้าที่)
   backendNotifyApiUrl: "https://asia-southeast1-tm-municipal-smartlight.cloudfunctions.net/sendLineUserUpdateNotification",
+  // Endpoint สำหรับส่งแจ้งเตือนเมื่อประชาชนแจ้งซ่อมใหม่ (ยืนยันประชาชน + บรอดแคสต์เจ้าหน้าที่)
+  backendNewReportApiUrl: "https://asia-southeast1-tm-municipal-smartlight.cloudfunctions.net/sendLineNewReportNotification",
   
   // สำหรับสภาพแวดล้อม Development เท่านั้น (หากไม่ได้ระบุ Backend ระบบจะข้ามการส่ง Push โดยไม่ทำให้แอปพลิเคชันพัง)
   channelAccessToken: "",                             // ไม่ใส่ Token ฝั่ง Client เพื่อความปลอดภัย

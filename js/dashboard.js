@@ -559,13 +559,24 @@ function updateReportStatus(reportId, lightId, newStatus) {
 
 // ส่ง Push Message แจ้งเตือนความคืบหน้าหาประชาชน
 function sendLineUserUpdateNotification(reportId, newStatus) {
+  let reportData = null;
+  if (isDemoMode) {
+    const localReports = JSON.parse(localStorage.getItem('smart_reports')) || [];
+    reportData = localReports.find(r => r.id === reportId);
+  } else {
+    reportData = allReports.find(r => r.id === reportId);
+  }
+
   if (lineConfig.backendNotifyApiUrl) {
     // ส่งข้อมูลไปยัง Backend API / Cloud Function (การทำงานที่ปลอดภัย)
     fetch(lineConfig.backendNotifyApiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reportId, newStatus })
-    }).catch(err => console.error("Error calling backend notify API:", err));
+      body: JSON.stringify({ reportId, newStatus, reportData })
+    })
+      .then(res => res.json())
+      .then(data => console.log("LINE notification sent via backend:", data))
+      .catch(err => console.error("Error calling backend notify API:", err));
     return;
   }
 

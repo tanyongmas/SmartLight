@@ -38,6 +38,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // ส่งการแจ้งเตือนเจ้าหน้าที่ผ่าน LINE Messaging API
 function sendLineStaffNotification(reportData) {
+  if (lineConfig.backendNewReportApiUrl) {
+    // การส่งแจ้งเตือนเจ้าหน้าที่ถูกรวมใน Cloud Function backendNewReportApiUrl เรียบร้อยแล้ว
+    return;
+  }
   if (!lineConfig.staffAccessToken || lineConfig.staffAccessToken === "YOUR_LINE_CHANNEL_ACCESS_TOKEN") {
     console.warn("LINE Messaging API Channel Access Token is missing. Skipping notification.");
     return;
@@ -173,6 +177,18 @@ function sendLineStaffNotification(reportData) {
 
 // ส่งข้อความ Flex Message แจ้งประชาชนว่า "ได้รับข้อมูลเรียบร้อย"
 function sendLineCitizenSubmitNotification(reportData) {
+  if (lineConfig.backendNewReportApiUrl) {
+    fetch(lineConfig.backendNewReportApiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reportData })
+    })
+      .then(res => res.json())
+      .then(data => console.log("New report notification sent via backend Cloud Function:", data))
+      .catch(err => console.error("Error calling backend new report API:", err));
+    return;
+  }
+
   const targetUserId = reportData.lineUserId;
   if (!targetUserId || targetUserId.startsWith("MOCK_")) {
     console.log("No real lineUserId or mock user. Skipping citizen notification.");
