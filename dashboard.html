@@ -996,7 +996,7 @@
         <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">ระบบแผนที่และจัดการหลอดไฟอัจฉริยะ</p>
       </div>
 
-      <form id="loginForm">
+      <form id="loginForm" onsubmit="doLogin(event); return false;">
         <div class="form-group">
           <label class="form-label" for="loginUsername">ชื่อผู้ใช้งาน (Username)</label>
           <input type="text" class="form-input" id="loginUsername" placeholder="ระบุชื่อผู้ใช้งาน (เช่น admin)"
@@ -1006,7 +1006,7 @@
           <label class="form-label" for="loginPassword">รหัสผ่าน</label>
           <input type="password" class="form-input" id="loginPassword" placeholder="••••••••" required>
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+        <button type="button" onclick="doLogin(event)" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
           <i class="fa-solid fa-arrow-right-to-bracket"></i> เข้าสู่ระบบ
         </button>
       </form>

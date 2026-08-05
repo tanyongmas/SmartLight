@@ -128,141 +128,160 @@ function getCitizenUrl(lightId = null, page = null) {
 // ==========================================
 // 2. Firebase Auth & System Initialization
 // ==========================================
-function initFirebase() {
-  const savedDemoUser = sessionStorage.getItem('demo_user');
-  if (savedDemoUser) {
-    isDemoMode = true;
-    const banner = document.getElementById('demoBanner');
-    if (banner) banner.style.display = 'block';
+function doLogin(e) {
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
+  }
+  const usernameInput = document.getElementById('loginUsername');
+  const passwordInput = document.getElementById('loginPassword');
+  const username = (usernameInput && usernameInput.value.trim()) ? usernameInput.value.trim() : 'Admin';
+  const password = passwordInput ? passwordInput.value : '';
+
+  let email = username;
+  if (!username.includes('@')) {
+    email = `${username}@smartlight.local`;
   }
 
-  if (firebaseConfig.apiKey === "YOUR_API_KEY" || !firebaseConfig.apiKey) {
-    console.warn("Firebase not configured. Entering Demo Mode.");
+  // จดจำการเข้าสู่ระบบไว้ใน localStorage (คงอยู่ถาวรแม้รีเฟรชหน้าจอหรือปิดเว็บ)
+  localStorage.setItem('smart_staff_user', username);
+  sessionStorage.setItem('smart_staff_user', username);
+  isDemoMode = true;
+
+  const banner = document.getElementById('demoBanner');
+  if (banner) banner.style.display = 'block';
+
+  loginSuccess({ email: username });
+
+  // ลองพยายามล็อกอินทาง Firebase Auth ในพื้นหลังด้วย (ถ้าเปิดใช้งาน)
+  if (typeof auth !== 'undefined' && auth && typeof auth.signInWithEmailAndPassword === 'function') {
+    auth.signInWithEmailAndPassword(email, password)
+      .then(userCred => {
+        if (userCred && userCred.user) {
+          isDemoMode = false;
+          if (banner) banner.style.display = 'none';
+          localStorage.setItem('smart_staff_user', userCred.user.email);
+          sessionStorage.setItem('smart_staff_user', userCred.user.email);
+          loginSuccess(userCred.user);
+        }
+      })
+      .catch(err => {
+        console.warn("Firebase Auth Notice (using local login):", err);
+      });
+  }
+
+  return false;
+}
+
+window.doLogin = doLogin;
+window.handleLoginSubmit = doLogin;
+
+function initFirebase() {
+  // 1. ตรวจสอบการจำสิทธิ์เก่าจาก localStorage และ sessionStorage
+  const savedUser = localStorage.getItem('smart_staff_user') || sessionStorage.getItem('smart_staff_user') || localStorage.getItem('demo_user');
+
+  if (savedUser) {
     isDemoMode = true;
     const banner = document.getElementById('demoBanner');
     if (banner) banner.style.display = 'block';
-
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-      loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const username = document.getElementById('loginUsername').value.trim() || 'Admin';
-        sessionStorage.setItem('demo_user', username);
-        loginSuccess({ email: username });
-      });
-    }
-    if (savedDemoUser) {
-      loginSuccess({ email: savedDemoUser });
-    }
+    loginSuccess({ email: savedUser });
   } else {
+    logoutSuccess();
+  }
+
+  // 2. ผูกการกดปุ่ม "เข้าสู่ระบบ" บน Login Form
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    loginForm.onsubmit = handleLoginSubmit;
+  }
+
+  // 3. เชื่อมต่อบริการ Firebase Auth & Firestore
+  if (typeof firebase !== 'undefined' && firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
     try {
-      firebase.initializeApp(firebaseConfig);
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
       db = firebase.firestore();
       auth = firebase.auth();
 
       auth.onAuthStateChanged((user) => {
         if (user) {
           isDemoMode = false;
-          sessionStorage.removeItem('demo_user');
+          const banner = document.getElementById('demoBanner');
+          if (banner) banner.style.display = 'none';
+          localStorage.setItem('smart_staff_user', user.email || 'Admin');
+          sessionStorage.setItem('smart_staff_user', user.email || 'Admin');
           loginSuccess(user);
-        } else if (isDemoMode && sessionStorage.getItem('demo_user')) {
-          loginSuccess({ email: sessionStorage.getItem('demo_user') });
-        } else {
+        } else if (!isDemoMode && !localStorage.getItem('smart_staff_user') && !sessionStorage.getItem('smart_staff_user')) {
           logoutSuccess();
         }
       });
-
-      const loginForm = document.getElementById('loginForm');
-      if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const usernameInput = document.getElementById('loginUsername');
-          const username = usernameInput ? (usernameInput.value.trim() || 'Admin') : 'Admin';
-          const passwordInput = document.getElementById('loginPassword');
-          const password = passwordInput ? passwordInput.value : '';
-
-          const isLocal = window.location.protocol === 'file:' ||
-            window.location.hostname === 'localhost' ||
-            window.location.hostname === '127.0.0.1' ||
-            window.location.hostname.startsWith('192.168.') ||
-            window.location.hostname.startsWith('10.') ||
-            window.location.hostname === '';
-
-          // หากเปิดผ่าน Live Server / Localhost / file:// หรือไม่ได้กรอกอีเมลคลาวด์ ให้เข้าสู่ระบบโหมดเดโมได้ทันที 100%
-          if (isLocal || !username.includes('@') || isDemoMode) {
-            isDemoMode = true;
-            sessionStorage.setItem('demo_user', username);
-            const banner = document.getElementById('demoBanner');
-            if (banner) banner.style.display = 'block';
-            loginSuccess({ email: username });
-            return;
-          }
-
-          let email = username;
-          auth.signInWithEmailAndPassword(email, password)
-            .catch(err => {
-              console.warn("Firebase Auth Error / Falling back to Demo Mode: ", err);
-              isDemoMode = true;
-              sessionStorage.setItem('demo_user', username);
-              const banner = document.getElementById('demoBanner');
-              if (banner) banner.style.display = 'block';
-              loginSuccess({ email: username });
-            });
-        });
-      }
-
-      if (savedDemoUser) {
-        loginSuccess({ email: savedDemoUser });
-      }
     } catch (e) {
-      console.error("Firebase init failed", e);
-      isDemoMode = true;
-      const banner = document.getElementById('demoBanner');
-      if (banner) banner.style.display = 'block';
-      const loginForm = document.getElementById('loginForm');
-      if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const username = document.getElementById('loginUsername').value.trim() || 'Admin';
-          sessionStorage.setItem('demo_user', username);
-          loginSuccess({ email: username });
-        });
-      }
-      if (savedDemoUser) {
-        loginSuccess({ email: savedDemoUser });
-      }
+      console.warn("Firebase initialization notice:", e);
     }
   }
 }
 
 function loginSuccess(user) {
-  document.getElementById('loginSection').style.display = 'none';
-  document.getElementById('dashboardSection').style.display = 'flex';
+  const loginSec = document.getElementById('loginSection');
+  const dashSec = document.getElementById('dashboardSection');
 
-  let displayName = user.email || 'Admin';
+  if (loginSec) loginSec.style.display = 'none';
+  if (dashSec) dashSec.style.display = 'flex';
+
+  let displayName = (user && user.email) ? user.email : 'Admin';
   if (displayName.endsWith('@smartlight.local')) {
     displayName = displayName.split('@')[0];
   }
-  document.getElementById('staffEmail').innerText = displayName;
+  const staffEmailEl = document.getElementById('staffEmail');
+  if (staffEmailEl) staffEmailEl.innerText = displayName;
 
-  loadData();
-  setTimeout(() => map && map.invalidateSize(), 300);
+  try {
+    loadData();
+  } catch (err) {
+    console.warn("Error in loadData on login:", err);
+  }
+
+  setTimeout(() => {
+    if (typeof L !== 'undefined' && map && typeof map.invalidateSize === 'function') {
+      map.invalidateSize();
+    }
+  }, 300);
 }
 
 function logout() {
-  isDemoMode = false;
+  localStorage.removeItem('smart_staff_user');
+  localStorage.removeItem('demo_user');
+  sessionStorage.removeItem('smart_staff_user');
   sessionStorage.removeItem('demo_user');
+  isDemoMode = false;
+
+  const banner = document.getElementById('demoBanner');
+  if (banner) banner.style.display = 'none';
+
   if (auth && typeof auth.signOut === 'function') {
-    auth.signOut().then(() => logoutSuccess()).catch(() => logoutSuccess());
-  } else {
-    logoutSuccess();
+    try { auth.signOut(); } catch(e) {}
   }
+  
+  const loginSec = document.getElementById('loginSection');
+  const dashSec = document.getElementById('dashboardSection');
+
+  if (dashSec) dashSec.style.display = 'none';
+  if (loginSec) loginSec.style.display = 'flex';
+
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) loginForm.reset();
 }
 
 function logoutSuccess() {
-  if (isDemoMode && sessionStorage.getItem('demo_user')) return;
-  document.getElementById('dashboardSection').style.display = 'none';
-  document.getElementById('loginSection').style.display = 'flex';
+  // หากมี Session ค้างอยู่ หรืออยู่ในโหมด Demo ห้ามเด้งกลับหน้า Login
+  if (isDemoMode || localStorage.getItem('smart_staff_user') || sessionStorage.getItem('smart_staff_user')) return;
+
+  const loginSec = document.getElementById('loginSection');
+  const dashSec = document.getElementById('dashboardSection');
+
+  if (dashSec) dashSec.style.display = 'none';
+  if (loginSec) loginSec.style.display = 'flex';
+
   const loginForm = document.getElementById('loginForm');
   if (loginForm) loginForm.reset();
 }
@@ -271,6 +290,10 @@ function logoutSuccess() {
 // 3. Map System & Interactive Controls
 // ==========================================
 function initMap() {
+  if (typeof L === 'undefined') {
+    console.warn("Leaflet Map SDK is not loaded.");
+    return;
+  }
   const defaultLatLng = [6.29445, 101.72362];
   map = L.map('map', { zoomControl: false }).setView(defaultLatLng, 15);
   L.control.zoom({ position: 'topright' }).addTo(map);
