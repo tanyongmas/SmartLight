@@ -436,76 +436,165 @@
         <!-- ห่อหุ้มฟอร์มแจ้งซ่อมเมื่อเลือกเสาไฟแล้ว -->
         <div id="reportFormContainer" style="display: none;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h3 style="font-size: 16px; color: var(--text-main);"><i class="fa-solid fa-circle-info"></i>
-              รายละเอียดเสาไฟ</h3>
-            <button class="btn btn-secondary" onclick="closeReportPanel()"
-              style="padding: 4px 8px; font-size: 12px;">ปิด</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="form-header-icon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              <div>
+                <h3 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin: 0; line-height: 1.2;">แบบฟอร์มแจ้งซ่อม</h3>
+                <p style="font-size: 11px; color: var(--text-muted); margin: 0;">ระบุประเภทปัญหาและแนบรูปถ่ายเสาไฟ</p>
+              </div>
+            </div>
+            <button type="button" class="btn-close-panel" onclick="closeReportPanel()" title="ปิดหน้าต่าง">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
           </div>
 
-          <div class="light-info-card">
-            <div class="info-row">
-              <span class="info-label">รหัสเสาไฟ:</span>
-              <span class="info-value" id="infoCode">-</span>
+          <!-- Highlighted Light Info Card -->
+          <div class="light-info-card highlighted-info-card">
+            <div class="info-card-header">
+              <div class="pole-code-badge">
+                <i class="fa-solid fa-lightbulb"></i>
+                <span id="infoCode">-</span>
+              </div>
+              <div id="infoStatusBadge">-</div>
             </div>
-            <div class="info-row">
-              <span class="info-label">ชื่อเรียกตำแหน่ง:</span>
-              <span class="info-value" id="infoName">-</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">เขต/โซน:</span>
-              <span class="info-value" id="infoZone">-</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">สถานะปัจจุบัน:</span>
-              <span id="infoStatusBadge">-</span>
+            <div class="info-card-body">
+              <div class="info-row-item">
+                <i class="fa-solid fa-location-dot info-icon"></i>
+                <div class="info-text">
+                  <span class="info-label">ตำแหน่ง/สถานที่</span>
+                  <span class="info-value" id="infoName">-</span>
+                </div>
+              </div>
+              <div class="info-row-item">
+                <i class="fa-solid fa-map-pin info-icon"></i>
+                <div class="info-text">
+                  <span class="info-label">ชุมชน/เขตโซน</span>
+                  <span class="info-value" id="infoZone">-</span>
+                </div>
+              </div>
             </div>
           </div>
 
           <form id="reportForm">
             <input type="hidden" id="reportLightId">
 
+            <!-- Issue Type Selection Grid (Icons) -->
             <div class="form-group">
-              <label class="form-label" for="issueType">ประเภทปัญหาที่พบ <span
-                  style="color:var(--color-danger)">*</span></label>
-              <select class="form-select" id="issueType" required>
-                <option value="" disabled selected>-- เลือกประเภทปัญหา --</option>
-                <option value="ไฟไม่ติด">💡 ไฟไม่ติด/ดับสนิท</option>
-                <option value="ไฟกะพริบ">⚡ ไฟกะพริบรบกวน</option>
-                <option value="โคมไฟชำรุด">🛠️ โคมไฟแตก/เสียหาย</option>
-                <option value="เสาไฟชำรุด/เอียง">⚠️ เสาไฟเอียง/ใกล้ล้ม</option>
-                <option value="อื่นๆ">📝 ปัญหาอื่นๆ (ระบุด้านล่าง)</option>
-              </select>
+              <label class="form-label-enhanced">
+                <i class="fa-solid fa-list-check label-icon"></i>
+                <span>ประเภทปัญหาที่พบ <span class="required-star">*</span></span>
+              </label>
+              <input type="hidden" id="issueType" name="issueType" value="">
+
+              <div class="issue-type-grid" id="issueTypeGrid">
+                <div class="issue-card" data-value="ไฟไม่ติด" onclick="selectIssueType('ไฟไม่ติด', this)">
+                  <div class="issue-card-header">
+                    <div class="issue-icon-box bg-red">
+                      <i class="fa-solid fa-lightbulb"></i>
+                    </div>
+                    <i class="fa-solid fa-circle-check check-badge"></i>
+                  </div>
+                  <div class="issue-card-content">
+                    <span class="issue-card-title">ไฟดับ / ไม่ติด</span>
+                    <span class="issue-card-desc">หลอดไฟไม่สว่าง ดับตลอดคืน</span>
+                  </div>
+                </div>
+
+                <div class="issue-card" data-value="โคมไฟชำรุด" onclick="selectIssueType('โคมไฟชำรุด', this)">
+                  <div class="issue-card-header">
+                    <div class="issue-icon-box bg-purple">
+                      <i class="fa-solid fa-screwdriver-wrench"></i>
+                    </div>
+                    <i class="fa-solid fa-circle-check check-badge"></i>
+                  </div>
+                  <div class="issue-card-content">
+                    <span class="issue-card-title">โคมไฟแตก/ชำรุด</span>
+                    <span class="issue-card-desc">ฝาครอบแตก สายไฟห้อย</span>
+                  </div>
+                </div>
+
+                <div class="issue-card" data-value="เสาไฟชำรุด/เอียง" onclick="selectIssueType('เสาไฟชำรุด/เอียง', this)">
+                  <div class="issue-card-header">
+                    <div class="issue-icon-box bg-orange">
+                      <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <i class="fa-solid fa-circle-check check-badge"></i>
+                  </div>
+                  <div class="issue-card-content">
+                    <span class="issue-card-title">เสาเอียง/มีสิ่งบัง</span>
+                    <span class="issue-card-desc">เสาไฟเอียง กิ่งไม้พาดทับ</span>
+                  </div>
+                </div>
+
+                <div class="issue-card" data-value="อื่นๆ" onclick="selectIssueType('อื่นๆ', this)">
+                  <div class="issue-card-header">
+                    <div class="issue-icon-box bg-blue">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </div>
+                    <i class="fa-solid fa-circle-check check-badge"></i>
+                  </div>
+                  <div class="issue-card-content">
+                    <span class="issue-card-title">ปัญหาอื่นๆ</span>
+                    <span class="issue-card-desc">ระบุรายละเอียดเพิ่มเติมด้านล่าง</span>
+                  </div>
+                </div>
+              </div>
+
+              <div id="issueTypeErrorMsg" class="issue-error-msg">
+                <i class="fa-solid fa-circle-exclamation"></i> กรุณาคลิกเลือกประเภทปัญหา 1 ข้อข้างต้น
+              </div>
             </div>
 
+            <!-- Details Field -->
             <div class="form-group">
-              <label class="form-label" for="reportDetail">รายละเอียดเพิ่มเติม</label>
-              <textarea class="form-textarea" id="reportDetail" rows="3"
-                placeholder="เช่น ดับเฉพาะช่วงดึก หรือมีกิ่งไม้บดบัง..."></textarea>
+              <label class="form-label-enhanced" for="reportDetail">
+                <i class="fa-solid fa-comment-dots label-icon"></i>
+                <span>รายละเอียดเพิ่มเติม</span>
+              </label>
+              <textarea class="form-textarea-enhanced" id="reportDetail" rows="3"
+                placeholder="ระบุจุดสังเกตเพิ่มเติม เช่น ดับเฉพาะช่วงดึก หรือมีกิ่งไม้บัง..."></textarea>
             </div>
 
+            <!-- Phone Field -->
             <div class="form-group">
-              <label class="form-label" for="reporterPhone">เบอร์โทรศัพท์ผู้แจ้ง (ไม่บังคับ)</label>
-              <input type="tel" class="form-input" id="reporterPhone"
-                placeholder="08X-XXXXXXX เพื่อความสะดวกในการติดต่อกลับ">
+              <label class="form-label-enhanced" for="reporterPhone">
+                <i class="fa-solid fa-phone label-icon"></i>
+                <span>เบอร์โทรศัพท์ผู้แจ้ง <span class="optional-tag">(ไม่บังคับ)</span></span>
+              </label>
+              <div class="input-with-icon-wrapper">
+                <i class="fa-solid fa-mobile-screen input-inner-icon"></i>
+                <input type="tel" class="form-input-enhanced" id="reporterPhone"
+                  placeholder="08X-XXXXXXX เพื่อความสะดวกในการติดต่อกลับ">
+              </div>
             </div>
 
+            <!-- Image Upload Dropzone -->
             <div class="form-group">
-              <label class="form-label">รูปภาพประกอบ (แนบอย่างน้อย 1 รูป, สูงสุด 4 รูป) <span
-                  style="color:var(--color-danger)">*</span></label>
-              <div class="image-upload-wrapper">
+              <label class="form-label-enhanced">
+                <i class="fa-solid fa-camera label-icon"></i>
+                <span>รูปภาพประกอบ <span class="required-star">*</span></span>
+              </label>
+              <div class="image-upload-wrapper-enhanced">
                 <div class="image-previews" id="imagePreviews"></div>
-                <label class="image-upload-btn" id="uploadBtnLabel" for="imageInput">
-                  <i class="fa-solid fa-camera" style="font-size: 20px;"></i>
-                  <span>เพิ่มรูปภาพ</span>
+                <label class="image-upload-btn-enhanced" id="uploadBtnLabel" for="imageInput">
+                  <div class="upload-icon-circle">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                  </div>
+                  <span class="upload-btn-title">แนบรูปภาพจุดเสาไฟ</span>
+                  <span class="upload-btn-sub">คลิกเพื่อถ่ายภาพหรือเลือกไฟล์ (1-4 รูป)</span>
                 </label>
                 <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
               </div>
-              <div id="imageCountText" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">เลือกแล้ว 0 /
-                4 รูป (แนบอย่างน้อย 1 รูป)</div>
+              <div id="imageCountText" class="image-count-badge">
+                <i class="fa-solid fa-images"></i> เลือกแล้ว 0 / 4 รูป (แนบอย่างน้อย 1 รูป)
+              </div>
             </div>
 
-            <button type="submit" class="btn btn-danger" style="width: 100%; margin-top: 10px;">
-              <i class="fa-solid fa-paper-plane"></i> ส่งข้อมูลแจ้งซ่อม
+            <button type="submit" class="btn-submit-report">
+              <i class="fa-solid fa-paper-plane btn-submit-icon"></i>
+              <span>ส่งข้อมูลแจ้งซ่อมทันที</span>
             </button>
           </form>
         </div>

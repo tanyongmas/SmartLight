@@ -694,182 +694,312 @@ function triggerLineNotification(report, newStatus) {
     return;
   }
 
-  let statusLabel = 'รอดำเนินการ';
-  if (newStatus === 'in_progress') statusLabel = 'กำลังดำเนินการ';
-  else if (newStatus === 'resolved') statusLabel = 'ซ่อมแซมเสร็จสิ้น';
+  function formatThaiTime(timestamp) {
+    if (!timestamp) return "";
+    let date;
+    if (timestamp && timestamp.seconds) {
+      date = new Date(timestamp.seconds * 1000);
+    } else if (typeof timestamp === "number") {
+      date = new Date(timestamp);
+    } else {
+      date = new Date(timestamp);
+    }
+    if (isNaN(date.getTime())) return "";
 
-  let citizenUrl = getCitizenUrl(null, 'track');
+    return date.toLocaleDateString("th-TH", {
+      day: "2-digit",
+      month: "short",
+      year: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Bangkok"
+    }) + " น.";
+  }
 
-  function getStatusLabel(status) {
-    if (status === 'pending' || status === 'broken') return 'ได้รับเรื่องแล้ว';
-    if (status === 'in_progress') return 'กำลังดำเนินการ';
-    if (status === 'resolved') return 'ซ่อมแซมเสร็จสิ้น';
-    return status;
+  let statusHeaderLabel = "รอดำเนินการ";
+  if (newStatus === "in_progress") {
+    statusHeaderLabel = "กำลังดำเนินการ";
+  } else if (newStatus === "resolved") {
+    statusHeaderLabel = "ซ่อมแซมเสร็จสิ้น";
   }
 
   const historyList = report.statusHistory || [
     {
-      status: 'pending',
-      label: 'ได้รับเรื่องแล้ว',
+      status: "pending",
+      label: "ได้รับเรื่องแล้ว",
       timestamp: report.timestamp || new Date().toISOString(),
-      note: 'ระบบได้รับแจ้งเรื่องไฟฟ้าสาธารณะชำรุดเรียบร้อยแล้ว'
+      note: "ระบบได้รับแจ้งเรื่องไฟฟ้าสาธารณะชำรุดเรียบร้อยแล้ว"
     }
   ];
-  const sortedHistory = [...historyList].sort((a, b) => {
-    const timeA = a.timestamp ? (a.timestamp.seconds ? a.timestamp.seconds * 1000 : new Date(a.timestamp).getTime()) : 0;
-    const timeB = b.timestamp ? (b.timestamp.seconds ? b.timestamp.seconds * 1000 : new Date(b.timestamp).getTime()) : 0;
-    return timeA - timeB;
-  });
 
-  const timelineContents = sortedHistory.map((hist, idx) => {
-    let dotColor = "#cbd5e1";
-    let isLast = idx === sortedHistory.length - 1;
+  function findHistory(statusKey) {
+    if (statusKey === "pending") {
+      return historyList.find(h => h.status === "pending" || h.status === "broken") || null;
+    }
+    return historyList.find(h => h.status === statusKey) || null;
+  }
 
-    if (hist.status === 'pending' || hist.status === 'broken') dotColor = "#dc2626";
-    else if (hist.status === 'in_progress') dotColor = "#d97706";
-    else if (hist.status === 'resolved') dotColor = "#16a34a";
+  const pendingHist = findHistory("pending");
+  const inProgressHist = findHistory("in_progress");
+  const resolvedHist = findHistory("resolved");
 
-    const histTime = formatTime(hist.timestamp);
+  let currentRank = 1;
+  if (newStatus === "in_progress") currentRank = 2;
+  if (newStatus === "resolved") currentRank = 3;
 
-    const itemBox = {
+  const lightCode = String(report.lightCode || report.code || "-");
+  const lightName = String(report.lightName || report.name || "-");
+  const issueType = String(report.issueType || "ไม่ระบุ");
+  const citizenUrl = getCitizenUrl(null, 'track');
+
+  // 🔴 Card 1: รับเรื่องแล้ว (สีแดง #dc2626)
+  const card1Time = pendingHist ? formatThaiTime(pendingHist.timestamp) : (report.timestamp ? formatThaiTime(report.timestamp) : "-");
+  const card1Note = pendingHist && pendingHist.note ? String(pendingHist.note) : "ระบบได้รับแจ้งเรื่องไฟฟ้าสาธารณะชำรุดเรียบร้อยแล้ว";
+
+  const card1 = {
+    type: "bubble",
+    styles: {
+      header: { backgroundColor: "#dc2626" },
+      body: { backgroundColor: "#ffffff" },
+      footer: { backgroundColor: "#f8fafc", separator: true, separatorColor: "#e2e8f0" }
+    },
+    header: {
       type: "box",
-      layout: "horizontal",
-      spacing: "md",
+      layout: "vertical",
+      contents: [
+        { type: "text", text: "📌 ขั้นตอนที่ 1/3", color: "#fecaca", size: "xs", weight: "bold" },
+        { type: "text", text: "🚨 รับเรื่องแจ้งซ่อม", color: "#ffffff", size: "md", weight: "bold", margin: "xs" },
+        { type: "text", text: currentRank === 1 ? "👉 อยู่ในขั้นตอนนี้" : "✅ ดำเนินการแล้ว", color: "#ffffff", size: "xs", margin: "xs" }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
       contents: [
         {
           type: "box",
-          layout: "vertical",
-          width: "24px",
+          layout: "horizontal",
           contents: [
-            {
-              type: "box",
-              layout: "vertical",
-              width: "2px",
-              backgroundColor: "#cbd5e1",
-              position: "absolute",
-              offsetTop: idx === 0 ? "12px" : "0px",
-              offsetBottom: isLast ? "12px" : "0px",
-              offsetStart: "11px",
-              contents: [{ type: "text", text: " ", size: "xxs" }]
-            },
-            {
-              type: "box",
-              layout: "vertical",
-              width: "12px",
-              height: "12px",
-              cornerRadius: "xxl",
-              backgroundColor: dotColor,
-              position: "absolute",
-              offsetTop: "6px",
-              offsetStart: "6px",
-              contents: [{ type: "text", text: " ", size: "xxs" }]
-            }
+            { type: "text", text: "รหัสเสาไฟ:", size: "sm", color: "#64748b", flex: 3 },
+            { type: "text", text: lightCode, weight: "bold", size: "sm", color: "#0ea5e9", flex: 5 }
           ]
         },
         {
           type: "box",
-          layout: "vertical",
-          flex: 1,
-          paddingBottom: isLast ? "0px" : "12px",
+          layout: "horizontal",
           contents: [
-            {
-              type: "text",
-              text: hist.label || getStatusLabel(hist.status),
-              weight: "bold",
-              size: "sm",
-              color: isLast ? "#0f172a" : "#64748b"
-            },
-            {
-              type: "text",
-              text: histTime,
-              size: "xs",
-              color: "#94a3b8",
-              margin: "xs"
-            }
+            { type: "text", text: "อาการเสีย:", size: "sm", color: "#64748b", flex: 3 },
+            { type: "text", text: issueType, weight: "bold", size: "sm", color: "#ef4444", flex: 5 }
+          ]
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "สถานที่:", size: "sm", color: "#64748b", flex: 3 },
+            { type: "text", text: lightName, size: "sm", color: "#334155", wrap: true, flex: 5 }
+          ]
+        },
+        { type: "separator", color: "#f1f5f9", margin: "sm" },
+        {
+          type: "box",
+          layout: "vertical",
+          spacing: "xs",
+          contents: [
+            { type: "text", text: "🕒 เวลาที่รับเรื่อง:", size: "xs", color: "#64748b", weight: "bold" },
+            { type: "text", text: card1Time || "-", size: "xs", color: "#0f172a", weight: "bold" },
+            { type: "text", text: card1Note, size: "xs", color: "#475569", wrap: true, margin: "xs" }
           ]
         }
       ]
-    };
-
-    if (hist.note) {
-      itemBox.contents[1].contents.push({
-        type: "text",
-        text: hist.note,
-        size: "xs",
-        color: "#475569",
-        wrap: true,
-        margin: "xs"
-      });
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "secondary",
+          color: "#dc2626",
+          action: { type: "uri", label: "🔍 ติดตามรายละเอียด", uri: citizenUrl }
+        }
+      ]
     }
+  };
 
-    return itemBox;
-  });
+  if (report.images && report.images.length > 0 && String(report.images[0]).startsWith("http")) {
+    card1.hero = {
+      type: "image",
+      url: report.images[0],
+      size: "full",
+      aspectRatio: "20:13",
+      aspectMode: "cover",
+      action: { type: "uri", uri: report.images[0] }
+    };
+  }
+
+  // 🟠 Card 2: กำลังดำเนินการ (สีส้ม #d97706)
+  const card2Time = inProgressHist ? formatThaiTime(inProgressHist.timestamp) : "-";
+  const card2Note = inProgressHist && inProgressHist.note ? String(inProgressHist.note) : (currentRank >= 2 ? "ช่างไฟฟ้ากำลังลงพื้นที่ตรวจสอบและซ่อมแซม" : "รอช่างไฟฟ้าเข้าดำเนินการในขั้นตอนถัดไป");
+
+  const card2 = {
+    type: "bubble",
+    styles: {
+      header: { backgroundColor: "#d97706" },
+      body: { backgroundColor: "#ffffff" },
+      footer: { backgroundColor: "#f8fafc", separator: true, separatorColor: "#e2e8f0" }
+    },
+    header: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        { type: "text", text: "⚙️ ขั้นตอนที่ 2/3", color: "#fde68a", size: "xs", weight: "bold" },
+        { type: "text", text: "🛠️ กำลังดำเนินการ", color: "#ffffff", size: "md", weight: "bold", margin: "xs" },
+        { type: "text", text: currentRank === 2 ? "👉 อยู่ในขั้นตอนนี้" : (currentRank > 2 ? "✅ ดำเนินการแล้ว" : "⏳ รอดำเนินการ"), color: "#ffffff", size: "xs", margin: "xs" }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      contents: [
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "รหัสเสาไฟ:", size: "sm", color: "#64748b", flex: 3 },
+            { type: "text", text: lightCode, weight: "bold", size: "sm", color: "#0ea5e9", flex: 5 }
+          ]
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "สถานะงาน:", size: "sm", color: "#64748b", flex: 3 },
+            { type: "text", text: currentRank >= 2 ? "กำลังซ่อมแซม" : "รอดำเนินการ", weight: "bold", size: "sm", color: currentRank >= 2 ? "#d97706" : "#94a3b8", flex: 5 }
+          ]
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "สถานที่:", size: "sm", color: "#64748b", flex: 3 },
+            { type: "text", text: lightName, size: "sm", color: "#334155", wrap: true, flex: 5 }
+          ]
+        },
+        { type: "separator", color: "#f1f5f9", margin: "sm" },
+        {
+          type: "box",
+          layout: "vertical",
+          spacing: "xs",
+          contents: [
+            { type: "text", text: "🕒 เวลาที่อัปเดต:", size: "xs", color: "#64748b", weight: "bold" },
+            { type: "text", text: card2Time, size: "xs", color: "#0f172a", weight: "bold" },
+            { type: "text", text: card2Note, size: "xs", color: "#475569", wrap: true, margin: "xs" }
+          ]
+        }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "secondary",
+          color: "#d97706",
+          action: { type: "uri", label: "🔍 ติดตามรายละเอียด", uri: citizenUrl }
+        }
+      ]
+    }
+  };
+
+  // 🟢 Card 3: ซ่อมแซมเสร็จสิ้น (สีเขียว #16a34a)
+  const card3Time = resolvedHist ? formatThaiTime(resolvedHist.timestamp) : "-";
+  const card3Note = resolvedHist && resolvedHist.note ? String(resolvedHist.note) : (currentRank === 3 ? "แก้ไขและซ่อมแซมเสร็จสิ้นแล้ว ไฟสาธารณะพร้อมใช้งานปกติ" : "รอการตรวจรับและซ่อมแซมเสร็จสิ้น");
+
+  const card3 = {
+    type: "bubble",
+    styles: {
+      header: { backgroundColor: "#16a34a" },
+      body: { backgroundColor: "#ffffff" },
+      footer: { backgroundColor: "#f8fafc", separator: true, separatorColor: "#e2e8f0" }
+    },
+    header: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        { type: "text", text: "✅ ขั้นตอนที่ 3/3", color: "#bbf7d0", size: "xs", weight: "bold" },
+        { type: "text", text: "🎉 ซ่อมแซมเสร็จสิ้น", color: "#ffffff", size: "md", weight: "bold", margin: "xs" },
+        { type: "text", text: currentRank === 3 ? "🎉 สำเร็จเรียบร้อยแล้ว" : "⏳ รอดำเนินการ", color: "#ffffff", size: "xs", margin: "xs" }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      contents: [
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "รหัสเสาไฟ:", size: "sm", color: "#64748b", flex: 3 },
+            { type: "text", text: lightCode, weight: "bold", size: "sm", color: "#0ea5e9", flex: 5 }
+          ]
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "ผลการซ่อม:", size: "sm", color: "#64748b", flex: 3 },
+            { type: "text", text: currentRank === 3 ? "ใช้งานได้ปกติ" : "รอดำเนินการ", weight: "bold", size: "sm", color: currentRank === 3 ? "#16a34a" : "#94a3b8", flex: 5 }
+          ]
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "สถานที่:", size: "sm", color: "#64748b", flex: 3 },
+            { type: "text", text: lightName, size: "sm", color: "#334155", wrap: true, flex: 5 }
+          ]
+        },
+        { type: "separator", color: "#f1f5f9", margin: "sm" },
+        {
+          type: "box",
+          layout: "vertical",
+          spacing: "xs",
+          contents: [
+            { type: "text", text: "🕒 เวลาที่เสร็จสิ้น:", size: "xs", color: "#64748b", weight: "bold" },
+            { type: "text", text: card3Time, size: "xs", color: "#0f172a", weight: "bold" },
+            { type: "text", text: card3Note, size: "xs", color: "#475569", wrap: true, margin: "xs" }
+          ]
+        }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: "#16a34a",
+          action: { type: "uri", label: "🔍 ติดตามในประวัติ", uri: citizenUrl }
+        }
+      ]
+    }
+  };
 
   const payload = {
     to: targetUserId,
     messages: [
       {
         type: "flex",
-        altText: `🔔 แจ้งความคืบหน้าการแจ้งซ่อมเสาไฟ: ${report.lightCode}`,
+        altText: `🔔 อัปเดตสถานะงานซ่อมเสาไฟ (${lightCode}): ${statusHeaderLabel}`,
         contents: {
-          type: "bubble",
-          styles: {
-            header: { backgroundColor: newStatus === 'resolved' ? "#16a34a" : newStatus === 'in_progress' ? "#d97706" : "#dc2626" },
-            body: { backgroundColor: "#ffffff" },
-            footer: { backgroundColor: "#f8fafc", separator: true, separatorColor: "#e2e8f0" }
-          },
-          header: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              { type: "text", text: `📢 อัปเดตสถานะ: ${statusLabel}`, weight: "bold", color: "#ffffff", size: "md" },
-              { type: "text", text: "ระบบแจ้งซ่อมไฟถนน เทศบาลตำบลตันหยงมัส", color: "#e8e8e8", size: "xs", margin: "xs" }
-            ]
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            spacing: "md",
-            contents: [
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  { type: "text", text: "รหัสเสาไฟ:", size: "sm", color: "#64748b", flex: 2 },
-                  { type: "text", text: report.lightCode, weight: "bold", size: "sm", color: "#0f172a", flex: 4 }
-                ]
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  { type: "text", text: "สถานที่:", size: "sm", color: "#64748b", flex: 2 },
-                  { type: "text", text: report.lightName, size: "sm", color: "#334155", wrap: true, flex: 4 }
-                ]
-              },
-              { type: "separator", color: "#f1f5f9", margin: "md" },
-              { type: "text", text: "📃 ไทม์ไลน์การดำเนินงาน:", size: "sm", weight: "bold", color: "#0f172a", margin: "sm" },
-              {
-                type: "box",
-                layout: "vertical",
-                spacing: "none",
-                margin: "xs",
-                contents: timelineContents
-              }
-            ]
-          },
-          footer: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                color: "#0ea5e9",
-                action: { type: "uri", label: "🔍 ติดตามรายละเอียดในประวัติ", uri: citizenUrl }
-              }
-            ]
-          }
+          type: "carousel",
+          contents: [card1, card2, card3]
         }
       }
     ]

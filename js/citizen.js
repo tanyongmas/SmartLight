@@ -1069,9 +1069,39 @@ function openSidebarWithoutLight(tabName = 'track') {
   }
 }
 
+function selectIssueType(value, element) {
+  const hiddenInput = document.getElementById('issueType');
+  if (hiddenInput) {
+    hiddenInput.value = value;
+  }
+
+  const cards = document.querySelectorAll('#issueTypeGrid .issue-card');
+  cards.forEach(card => card.classList.remove('active'));
+
+  if (element) {
+    element.classList.add('active');
+  }
+
+  const errContainer = document.getElementById('issueTypeErrorMsg');
+  if (errContainer) {
+    errContainer.style.display = 'none';
+  }
+}
+
+function resetIssueTypeSelection() {
+  const hiddenInput = document.getElementById('issueType');
+  if (hiddenInput) hiddenInput.value = '';
+  const cards = document.querySelectorAll('#issueTypeGrid .issue-card');
+  cards.forEach(card => card.classList.remove('active'));
+  const errContainer = document.getElementById('issueTypeErrorMsg');
+  if (errContainer) errContainer.style.display = 'none';
+}
+
 function openReportPanel(lightId) {
   const light = allLights.find(l => l.id === lightId);
   if (!light) return;
+
+  resetIssueTypeSelection();
 
   document.getElementById('reportLightId').value = light.id;
   document.getElementById('infoCode').innerText = light.code;
@@ -1097,6 +1127,7 @@ function openReportPanel(lightId) {
 function closeReportPanel() {
   const reportForm = document.getElementById('reportForm');
   if (reportForm) reportForm.reset();
+  resetIssueTypeSelection();
   resetImageUpload();
 
   const sidebar = document.querySelector('.sidebar');
@@ -1261,6 +1292,25 @@ async function handleReportSubmit(e) {
     const issueType = document.getElementById('issueType').value;
     const details = document.getElementById('reportDetail').value;
     const reporterPhone = document.getElementById('reporterPhone').value;
+
+    if (!issueType) {
+      const errContainer = document.getElementById('issueTypeErrorMsg');
+      if (errContainer) errContainer.style.display = 'flex';
+      const grid = document.getElementById('issueTypeGrid');
+      if (grid) {
+        grid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        grid.classList.add('shake-animation');
+        setTimeout(() => grid.classList.remove('shake-animation'), 600);
+      }
+      Swal.fire({
+        title: '<span style="font-size: 18px; font-weight: 700; color: #dc2626;">โปรดระบุประเภทปัญหา</span>',
+        text: 'กรุณาคลิกเลือกประเภทปัญหาที่พบบนการ์ดไอคอน 1 ข้อก่อนส่งข้อมูล',
+        icon: 'warning',
+        confirmButtonText: 'ตกลง เลือกปัญหา',
+        confirmButtonColor: '#0284c7'
+      });
+      return;
+    }
 
     const targetLight = allLights.find(l => l.id === lightId);
     if (!targetLight) return;
