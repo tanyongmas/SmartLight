@@ -506,6 +506,19 @@ function displayReports() {
   }
 
   container.innerHTML = '';
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetReportId = urlParams.get('reportId');
+  if (targetReportId) {
+    const targetReport = allReports.find(r => r.id === targetReportId || r.lightCode === targetReportId);
+    if (targetReport && !window._hasLocatedTargetReport) {
+      window._hasLocatedTargetReport = true;
+      setTimeout(() => {
+        locateLight(targetReport.lightId);
+      }, 500);
+    }
+  }
+
   allReports.forEach(report => {
     const timeFormatted = formatTime(report.timestamp);
     const cardStatusClass = report.status === 'resolved' ? 'badge-working' : report.status === 'in_progress' ? 'badge-pending' : 'badge-broken';
