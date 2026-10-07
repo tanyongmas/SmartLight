@@ -78,6 +78,91 @@ function sendLineStaffNotification(reportData) {
   const reportIdStr = reportData.id || reportData.reportId || "";
   const officerUpdateUrl = reportIdStr ? `${dashboardUrl}?reportId=${reportIdStr}` : dashboardUrl;
 
+  const staffBodyContents = [
+    {
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        { type: "text", text: "รหัสเสาไฟ:", size: "xs", color: "#64748b", flex: 3 },
+        { type: "text", text: String(reportData.lightCode || "-"), weight: "bold", size: "xs", color: "#0ea5e9", flex: 5 }
+      ]
+    },
+    {
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        { type: "text", text: "อาการเสีย:", size: "xs", color: "#64748b", flex: 3 },
+        { type: "text", text: String(reportData.issueType || "-"), weight: "bold", size: "xs", color: "#ef4444", flex: 5 }
+      ]
+    },
+    {
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        { type: "text", text: "สถานที่:", size: "xs", color: "#64748b", flex: 3 },
+        { type: "text", text: String(reportData.lightName || "-"), size: "xs", color: "#334155", wrap: true, flex: 5 }
+      ]
+    }
+  ];
+
+  if (lat && lng) {
+    staffBodyContents.push({
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        { type: "text", text: "พิกัด GPS:", size: "xs", color: "#64748b", flex: 3 },
+        { type: "text", text: `${lat}, ${lng}`, size: "xs", color: "#0284c7", weight: "bold", flex: 5 }
+      ]
+    });
+  }
+
+  staffBodyContents.push(
+    { type: "separator", color: "#f1f5f9", margin: "xs" },
+    {
+      type: "box",
+      layout: "vertical",
+      spacing: "none",
+      margin: "xs",
+      contents: [
+        { type: "text", text: "📝 รายละเอียดเพิ่มเติม:", size: "xs", color: "#64748b", weight: "bold" },
+        { type: "text", text: String(reportData.details || "ไม่มีรายละเอียดเพิ่มเติม"), size: "xs", color: "#475569", wrap: true, margin: "xs" }
+      ]
+    },
+    { type: "separator", color: "#f1f5f9", margin: "xs" },
+    {
+      type: "box",
+      layout: "vertical",
+      spacing: "none",
+      margin: "xs",
+      contents: [
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "👤 ผู้แจ้งเรื่อง:", size: "xs", color: "#64748b", flex: 3 },
+            { type: "text", text: String(reportData.lineDisplayName || "ประชาชนผู้แจ้ง"), size: "xs", color: "#334155", flex: 5 }
+          ]
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "📞 เบอร์ติดต่อ:", size: "xs", color: "#64748b", flex: 3 },
+            { type: "text", text: String(reportData.reporterPhone || "ไม่ได้ระบุ"), size: "xs", color: "#0f172a", weight: "bold", flex: 5 }
+          ]
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "🕒 เวลาที่แจ้ง:", size: "xs", color: "#64748b", flex: 3 },
+            { type: "text", text: staffTimeStr || "-", size: "xs", color: "#0f172a", flex: 5 }
+          ]
+        }
+      ]
+    }
+  );
+
   const flexMessage = {
     type: "bubble",
     styles: {
@@ -100,84 +185,7 @@ function sendLineStaffNotification(reportData) {
       layout: "vertical",
       paddingAll: "md",
       spacing: "xs",
-      contents: [
-        {
-          type: "box",
-          layout: "horizontal",
-          contents: [
-            { type: "text", text: "รหัสเสาไฟ:", size: "xs", color: "#64748b", flex: 3 },
-            { type: "text", text: String(reportData.lightCode || "-"), weight: "bold", size: "xs", color: "#0ea5e9", flex: 5 }
-          ]
-        },
-        {
-          type: "box",
-          layout: "horizontal",
-          contents: [
-            { type: "text", text: "อาการเสีย:", size: "xs", color: "#64748b", flex: 3 },
-            { type: "text", text: String(reportData.issueType || "-"), weight: "bold", size: "xs", color: "#ef4444", flex: 5 }
-          ]
-        },
-        {
-          type: "box",
-          layout: "horizontal",
-          contents: [
-            { type: "text", text: "สถานที่:", size: "xs", color: "#64748b", flex: 3 },
-            { type: "text", text: String(reportData.lightName || "-"), size: "xs", color: "#334155", wrap: true, flex: 5 }
-          ]
-        },
-        lat && lng ? {
-          type: "box",
-          layout: "horizontal",
-          contents: [
-            { type: "text", text: "พิกัด GPS:", size: "xs", color: "#64748b", flex: 3 },
-            { type: "text", text: `${lat}, ${lng}`, size: "xs", color: "#0284c7", weight: "bold", flex: 5 }
-          ]
-        } : { type: "box", layout: "none", contents: [] },
-        { type: "separator", color: "#f1f5f9", margin: "xs" },
-        {
-          type: "box",
-          layout: "vertical",
-          spacing: "none",
-          margin: "xs",
-          contents: [
-            { type: "text", text: "📝 รายละเอียดเพิ่มเติม:", size: "xs", color: "#64748b", weight: "bold" },
-            { type: "text", text: String(reportData.details || "ไม่มีรายละเอียดเพิ่มเติม"), size: "xs", color: "#475569", wrap: true, margin: "xs" }
-          ]
-        },
-        { type: "separator", color: "#f1f5f9", margin: "xs" },
-        {
-          type: "box",
-          layout: "vertical",
-          spacing: "none",
-          margin: "xs",
-          contents: [
-            {
-              type: "box",
-              layout: "horizontal",
-              contents: [
-                { type: "text", text: "👤 ผู้แจ้งเรื่อง:", size: "xs", color: "#64748b", flex: 3 },
-                { type: "text", text: String(reportData.lineDisplayName || "ประชาชนผู้แจ้ง"), size: "xs", color: "#334155", flex: 5 }
-              ]
-            },
-            {
-              type: "box",
-              layout: "horizontal",
-              contents: [
-                { type: "text", text: "📞 เบอร์ติดต่อ:", size: "xs", color: "#64748b", flex: 3 },
-                { type: "text", text: String(reportData.reporterPhone || "ไม่ได้ระบุ"), size: "xs", color: "#0f172a", weight: "bold", flex: 5 }
-              ]
-            },
-            {
-              type: "box",
-              layout: "horizontal",
-              contents: [
-                { type: "text", text: "🕒 เวลาที่แจ้ง:", size: "xs", color: "#64748b", flex: 3 },
-                { type: "text", text: staffTimeStr || "-", size: "xs", color: "#0f172a", flex: 5 }
-              ]
-            }
-          ]
-        }
-      ]
+      contents: staffBodyContents
     },
     footer: {
       type: "box",
