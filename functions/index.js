@@ -1,10 +1,11 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
-const admin = require("firebase-admin");
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const axios = require("axios");
 
-admin.initializeApp();
-const db = admin.firestore();
+initializeApp();
+const db = getFirestore();
 
 function formatThaiTime(timestamp) {
   if (!timestamp) return "";
@@ -876,13 +877,13 @@ async function processOfficerPostbackStatusUpdate(reportId, targetStatus, replyT
 
   await reportRef.update({
     status: targetStatus,
-    statusHistory: admin.firestore.FieldValue.arrayUnion(historyEntry)
+    statusHistory: FieldValue.arrayUnion(historyEntry)
   });
 
   if (report.lightId) {
     await db.collection("lights").doc(report.lightId).update({
       status: newLightStatus,
-      lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+      lastUpdated: FieldValue.serverTimestamp()
     }).catch(err => logger.error("Error updating light doc:", err));
   }
 
