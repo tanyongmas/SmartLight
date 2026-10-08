@@ -782,17 +782,24 @@ exports.lineOfficerWebhook = onRequest({
     const events = req.body.events || [];
     const staffToken = process.env.LINE_STAFF_ACCESS_TOKEN || process.env.LINE_CHANNEL_ACCESS_TOKEN;
 
+    logger.info("lineOfficerWebhook received events:", { count: events.length });
+
     for (const event of events) {
+      logger.info("Processing LINE event:", { type: event.type, source: event.source });
+
       if (event.type === "postback") {
         const replyToken = event.replyToken;
+        const sourceId = event.source ? (event.source.userId || event.source.groupId || event.source.roomId) : null;
         const dataStr = event.postback && event.postback.data ? event.postback.data : "";
+        logger.info("LINE Postback received:", { dataStr, replyToken, sourceId });
+
         const params = new URLSearchParams(dataStr);
         const action = params.get("action");
         const reportId = params.get("reportId");
         const targetStatus = params.get("status");
 
         if (action === "update_status" && reportId && targetStatus) {
-          await processOfficerPostbackStatusUpdate(reportId, targetStatus, replyToken, staffToken);
+          await processOfficerPostbackStatusUpdate(reportId, targetStatus, replyToken, sourceId, staffToken);
         }
       }
     }
@@ -803,23 +810,31 @@ exports.lineOfficerWebhook = onRequest({
   }
 });
 
-async function processOfficerPostbackStatusUpdate(reportId, targetStatus, replyToken, staffToken) {
-  const reportRef = db.collection("reports").doc(reportId);
-  const reportDoc = await reportRef.get();
+async function processOfficerPostbackStatusUpdate(reportId, targetStatus, replyToken, sourceId, staffToken) {
+  logger.info("processOfficerPostbackStatusUpdate starting:", { reportId, targetStatus });
 
-  if (!reportDoc.exists) {
-    if (replyToken && staffToken) {
-      await axios.post("https://api.line.me/v2/bot/message/reply", {
-        replyToken: replyToken,
-        messages: [{ type: "text", text: "❌ ไม่พบข้อมูลรายการแจ้งซ่อมนี้ในระบบ" }]
-      }, {
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${staffToken}` }
-      }).catch(err => logger.error("Reply error:", err));
+  let reportRef = db.collection("reports").doc(reportId);
+  let reportDoc = await reportRef.get();
+  let report = null;
+
+  if (reportDoc.exists) {
+    report = reportDoc.data();
+  } else {
+    logger.warn(`Report doc ${reportId} not found directly, trying fallback query...`);
+    const querySnap = await db.collection("reports").where("lightCode", "==", reportId).orderBy("timestamp", "desc").limit(1).get();
+    if (!querySnap.empty) {
+      reportDoc = querySnap.docs[0];
+      reportRef = reportDoc.ref;
+      report = reportDoc.data();
     }
+  }
+
+  if (!report) {
+    logger.error("Report document not found in Firestore:", { reportId });
+    await sendLINEOfficerReplyOrPush(replyToken, sourceId, [{ type: "text", text: "❌ ไม่พบข้อมูลรายการแจ้งซ่อมนี้ในระบบ" }], staffToken);
     return;
   }
 
-  const report = reportDoc.data();
   const currentStatus = report.status || "pending";
   const lightCode = String(report.lightCode || report.code || "-");
   const lightName = String(report.lightName || report.name || "-");
@@ -827,32 +842,20 @@ async function processOfficerPostbackStatusUpdate(reportId, targetStatus, replyT
   // ตรวจสอบการกดอัปเดตสถานะซ้ำ
   if (currentStatus === targetStatus) {
     const currentStatusLabel = currentStatus === "in_progress" ? "กำลังดำเนินการ (รับเรื่องซ่อมแล้ว)" : currentStatus === "resolved" ? "ซ่อมเสร็จสิ้นแล้ว" : "รอดำเนินการ";
-    if (replyToken && staffToken) {
-      await axios.post("https://api.line.me/v2/bot/message/reply", {
-        replyToken: replyToken,
-        messages: [{
-          type: "text",
-          text: `⚠️ [แจ้งเตือน: อัปเดตสถานะซ้ำ]\n\n📍 รหัสเสาไฟ: ${lightCode}\n📌 สถานะปัจจุบัน: ${currentStatusLabel}\n\nรายการแจ้งซ่อมนี้อยู่ในสถานะดังกล่าวเรียบร้อยแล้ว`
-        }]
-      }, {
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${staffToken}` }
-      }).catch(err => logger.error("Reply error:", err));
-    }
+    logger.info("Duplicate status update detected:", { reportId, currentStatus, targetStatus });
+    await sendLINEOfficerReplyOrPush(replyToken, sourceId, [{
+      type: "text",
+      text: `⚠️ [แจ้งเตือน: อัปเดตสถานะซ้ำ]\n\n📍 รหัสเสาไฟ: ${lightCode}\n📌 สถานะปัจจุบัน: ${currentStatusLabel}\n\nรายการแจ้งซ่อมนี้อยู่ในสถานะดังกล่าวเรียบร้อยแล้ว`
+    }], staffToken);
     return;
   }
 
   if (currentStatus === "resolved" && targetStatus === "in_progress") {
-    if (replyToken && staffToken) {
-      await axios.post("https://api.line.me/v2/bot/message/reply", {
-        replyToken: replyToken,
-        messages: [{
-          type: "text",
-          text: `⚠️ [แจ้งเตือน: ไม่สามารถเปลี่ยนสถานะได้]\n\n📍 รหัสเสาไฟ: ${lightCode}\nรายการนี้ได้รับการซ่อมเสร็จสิ้นแล้ว ไม่สามารถย้อนกลับเป็นกำลังดำเนินการได้`
-        }]
-      }, {
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${staffToken}` }
-      }).catch(err => logger.error("Reply error:", err));
-    }
+    logger.info("Attempted to revert resolved status to in_progress:", { reportId });
+    await sendLINEOfficerReplyOrPush(replyToken, sourceId, [{
+      type: "text",
+      text: `⚠️ [แจ้งเตือน: ไม่สามารถเปลี่ยนสถานะได้]\n\n📍 รหัสเสาไฟ: ${lightCode}\nรายการนี้ได้รับการซ่อมเสร็จสิ้นแล้ว ไม่สามารถย้อนกลับเป็นกำลังดำเนินการได้`
+    }], staffToken);
     return;
   }
 
@@ -886,6 +889,8 @@ async function processOfficerPostbackStatusUpdate(reportId, targetStatus, replyT
       lastUpdated: FieldValue.serverTimestamp()
     }).catch(err => logger.error("Error updating light doc:", err));
   }
+
+  logger.info("Report status updated successfully in Firestore:", { reportId, targetStatus });
 
   // ส่ง Push Notification แจ้งความคืบหน้าหาประชาชนผู้แจ้ง
   const citizenToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
@@ -1008,46 +1013,79 @@ async function processOfficerPostbackStatusUpdate(reportId, targetStatus, replyT
       }, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${citizenToken}` }
       }).catch(err => logger.error("Citizen push postback error:", err.response ? err.response.data : err.message));
+
+      logger.info("Successfully sent citizen status update notification push:", { targetUserId });
     } catch (err) {
       logger.error("Error pushing notification to citizen:", err);
     }
   }
 
   // ตอบกลับเจ้าหน้าที่ใน LINE
-  if (replyToken && staffToken) {
-    const updateTimeStr = formatThaiTime(new Date());
-    const replyFlex = {
-      type: "flex",
-      altText: `✅ อัปเดตสถานะสำเร็จ: ${lightCode}`,
-      contents: {
-        type: "bubble",
-        styles: {
-          header: { backgroundColor: targetStatus === "resolved" ? "#16a34a" : "#d97706" },
-          body: { backgroundColor: "#ffffff" }
-        },
-        header: {
-          type: "box", layout: "vertical", paddingAll: "md",
-          contents: [
-            { type: "text", text: "✅ อัปเดตสถานะสำเร็จ!", color: "#ffffff", size: "md", weight: "bold" },
-            { type: "text", text: `สถานะใหม่: ${statusLabel}`, color: "#ffffff", size: "xs", margin: "xs" }
-          ]
-        },
-        body: {
-          type: "box", layout: "vertical", paddingAll: "md", spacing: "xs",
-          contents: [
-            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "รหัสเสาไฟ:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: lightCode, weight: "bold", size: "xs", color: "#0ea5e9", flex: 5 }] },
-            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "สถานที่:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: lightName, size: "xs", color: "#334155", wrap: true, flex: 5 }] },
-            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "เวลาอัปเดต:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: updateTimeStr, size: "xs", color: "#0f172a", weight: "bold", flex: 5 }] }
-          ]
-        }
+  const updateTimeStr = formatThaiTime(new Date());
+  const replyFlex = {
+    type: "flex",
+    altText: `✅ อัปเดตสถานะสำเร็จ: ${lightCode}`,
+    contents: {
+      type: "bubble",
+      styles: {
+        header: { backgroundColor: targetStatus === "resolved" ? "#16a34a" : "#d97706" },
+        body: { backgroundColor: "#ffffff" }
+      },
+      header: {
+        type: "box", layout: "vertical", paddingAll: "md",
+        contents: [
+          { type: "text", text: "✅ อัปเดตสถานะสำเร็จ!", color: "#ffffff", size: "md", weight: "bold" },
+          { type: "text", text: `สถานะใหม่: ${statusLabel}`, color: "#ffffff", size: "xs", margin: "xs" }
+        ]
+      },
+      body: {
+        type: "box", layout: "vertical", paddingAll: "md", spacing: "xs",
+        contents: [
+          { type: "box", layout: "horizontal", contents: [{ type: "text", text: "รหัสเสาไฟ:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: lightCode, weight: "bold", size: "xs", color: "#0ea5e9", flex: 5 }] },
+          { type: "box", layout: "horizontal", contents: [{ type: "text", text: "สถานที่:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: lightName, size: "xs", color: "#334155", wrap: true, flex: 5 }] },
+          { type: "box", layout: "horizontal", contents: [{ type: "text", text: "เวลาอัปเดต:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: updateTimeStr, size: "xs", color: "#0f172a", weight: "bold", flex: 5 }] }
+        ]
       }
-    };
+    }
+  };
 
-    await axios.post("https://api.line.me/v2/bot/message/reply", {
-      replyToken: replyToken,
-      messages: [replyFlex]
-    }, {
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${staffToken}` }
-    }).catch(err => logger.error("Reply flex error:", err.response ? err.response.data : err.message));
+  await sendLINEOfficerReplyOrPush(replyToken, sourceId, [replyFlex], staffToken);
+}
+
+// Helper ส่งข้อความกลับหาเจ้าหน้าที่ (ลอง Reply ก่อน หากไม่สำเร็จให้ Fallback เป็น Push)
+async function sendLINEOfficerReplyOrPush(replyToken, sourceId, messages, accessToken) {
+  if (!accessToken) {
+    logger.warn("No accessToken provided for officer response.");
+    return;
+  }
+
+  let success = false;
+  if (replyToken) {
+    try {
+      await axios.post("https://api.line.me/v2/bot/message/reply", {
+        replyToken: replyToken,
+        messages: messages
+      }, {
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` }
+      });
+      success = true;
+      logger.info("Successfully replied to officer via replyToken.");
+    } catch (err) {
+      logger.error("Reply token failed, attempting fallback push:", err.response ? err.response.data : err.message);
+    }
+  }
+
+  if (!success && sourceId) {
+    try {
+      await axios.post("https://api.line.me/v2/bot/message/push", {
+        to: sourceId,
+        messages: messages
+      }, {
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` }
+      });
+      logger.info("Successfully pushed response to officer sourceId:", { sourceId });
+    } catch (err) {
+      logger.error("Fallback push to officer failed:", err.response ? err.response.data : err.message);
+    }
   }
 }
