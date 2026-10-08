@@ -211,21 +211,31 @@ exports.sendLineNewReportNotification = onRequest({
                 style: "primary",
                 color: "#d97706",
                 height: "sm",
-                action: { type: "uri", label: "🛠️ รับเรื่องซ่อม", uri: acceptUrl }
+                action: {
+                  type: "postback",
+                  label: "🛠️ รับเรื่องซ่อม",
+                  data: `action=update_status&reportId=${reportIdStr}&status=in_progress`,
+                  displayText: "🛠️ รับเรื่องซ่อม"
+                }
               },
               {
                 type: "button",
                 style: "primary",
                 color: "#16a34a",
                 height: "sm",
-                action: { type: "uri", label: "✅ ซ่อมเสร็จสิ้น", uri: completeUrl }
+                action: {
+                  type: "postback",
+                  label: "✅ ซ่อมเสร็จสิ้น",
+                  data: `action=update_status&reportId=${reportIdStr}&status=resolved`,
+                  displayText: "✅ ซ่อมเสร็จสิ้น"
+                }
               }
             ]
           },
           {
             type: "button",
             style: "primary",
-            color: "#16a34a",
+            color: "#ef4444",
             height: "sm",
             action: { type: "uri", label: "📋 อัปเดตสถานะผ่าน Dashboard", uri: officerUpdateUrl }
           }
@@ -757,3 +767,286 @@ exports.sendLineUserUpdateNotification = onRequest({
     });
   }
 });
+
+// 3. Cloud Function สำหรับรองรับ LINE Bot Webhook (Postback จากเจ้าหน้าที่ใน LINE โดยตรง)
+exports.lineOfficerWebhook = onRequest({
+  region: "asia-southeast1",
+  cors: true
+}, async (req, res) => {
+  if (req.method !== "POST") {
+    return res.status(200).send("OK");
+  }
+
+  try {
+    const events = req.body.events || [];
+    const staffToken = process.env.LINE_STAFF_ACCESS_TOKEN || process.env.LINE_CHANNEL_ACCESS_TOKEN;
+
+    for (const event of events) {
+      if (event.type === "postback") {
+        const replyToken = event.replyToken;
+        const dataStr = event.postback && event.postback.data ? event.postback.data : "";
+        const params = new URLSearchParams(dataStr);
+        const action = params.get("action");
+        const reportId = params.get("reportId");
+        const targetStatus = params.get("status");
+
+        if (action === "update_status" && reportId && targetStatus) {
+          await processOfficerPostbackStatusUpdate(reportId, targetStatus, replyToken, staffToken);
+        }
+      }
+    }
+    return res.status(200).send({ success: true });
+  } catch (err) {
+    logger.error("lineOfficerWebhook error:", err);
+    return res.status(500).send({ error: err.message });
+  }
+});
+
+async function processOfficerPostbackStatusUpdate(reportId, targetStatus, replyToken, staffToken) {
+  const reportRef = db.collection("reports").doc(reportId);
+  const reportDoc = await reportRef.get();
+
+  if (!reportDoc.exists) {
+    if (replyToken && staffToken) {
+      await axios.post("https://api.line.me/v2/bot/message/reply", {
+        replyToken: replyToken,
+        messages: [{ type: "text", text: "❌ ไม่พบข้อมูลรายการแจ้งซ่อมนี้ในระบบ" }]
+      }, {
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${staffToken}` }
+      }).catch(err => logger.error("Reply error:", err));
+    }
+    return;
+  }
+
+  const report = reportDoc.data();
+  const currentStatus = report.status || "pending";
+  const lightCode = String(report.lightCode || report.code || "-");
+  const lightName = String(report.lightName || report.name || "-");
+
+  // ตรวจสอบการกดอัปเดตสถานะซ้ำ
+  if (currentStatus === targetStatus) {
+    const currentStatusLabel = currentStatus === "in_progress" ? "กำลังดำเนินการ (รับเรื่องซ่อมแล้ว)" : currentStatus === "resolved" ? "ซ่อมเสร็จสิ้นแล้ว" : "รอดำเนินการ";
+    if (replyToken && staffToken) {
+      await axios.post("https://api.line.me/v2/bot/message/reply", {
+        replyToken: replyToken,
+        messages: [{
+          type: "text",
+          text: `⚠️ [แจ้งเตือน: อัปเดตสถานะซ้ำ]\n\n📍 รหัสเสาไฟ: ${lightCode}\n📌 สถานะปัจจุบัน: ${currentStatusLabel}\n\nรายการแจ้งซ่อมนี้อยู่ในสถานะดังกล่าวเรียบร้อยแล้ว`
+        }]
+      }, {
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${staffToken}` }
+      }).catch(err => logger.error("Reply error:", err));
+    }
+    return;
+  }
+
+  if (currentStatus === "resolved" && targetStatus === "in_progress") {
+    if (replyToken && staffToken) {
+      await axios.post("https://api.line.me/v2/bot/message/reply", {
+        replyToken: replyToken,
+        messages: [{
+          type: "text",
+          text: `⚠️ [แจ้งเตือน: ไม่สามารถเปลี่ยนสถานะได้]\n\n📍 รหัสเสาไฟ: ${lightCode}\nรายการนี้ได้รับการซ่อมเสร็จสิ้นแล้ว ไม่สามารถย้อนกลับเป็นกำลังดำเนินการได้`
+        }]
+      }, {
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${staffToken}` }
+      }).catch(err => logger.error("Reply error:", err));
+    }
+    return;
+  }
+
+  // อัปเดตสถานะใน Firestore
+  const newLightStatus = targetStatus === "resolved" ? "working" : "pending";
+  let statusLabel = "รอดำเนินการ";
+  let statusNote = "เทศบาลตำบลตันหยงมัสได้รับเรื่องแจ้งแล้ว ช่างไฟฟ้าจะเข้าตรวจสอบพิกัด";
+  if (targetStatus === "in_progress") {
+    statusLabel = "กำลังดำเนินการ";
+    statusNote = "เจ้าหน้าที่รับเรื่องซ่อมแล้ว และกำลังจัดส่งทีมช่างไฟฟ้าเดินทางเข้าแก้ไขหน้างาน";
+  } else if (targetStatus === "resolved") {
+    statusLabel = "ซ่อมแซมเสร็จสิ้น";
+    statusNote = "ดำเนินการเปลี่ยนหลอดไฟ/ซ่อมโคมไฟสำเร็จ ไฟฟ้าสาธารณะส่องสว่างปกติแล้ว";
+  }
+
+  const historyEntry = {
+    status: targetStatus,
+    label: statusLabel,
+    timestamp: new Date().toISOString(),
+    note: statusNote
+  };
+
+  await reportRef.update({
+    status: targetStatus,
+    statusHistory: admin.firestore.FieldValue.arrayUnion(historyEntry)
+  });
+
+  if (report.lightId) {
+    await db.collection("lights").doc(report.lightId).update({
+      status: newLightStatus,
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+    }).catch(err => logger.error("Error updating light doc:", err));
+  }
+
+  // ส่ง Push Notification แจ้งความคืบหน้าหาประชาชนผู้แจ้ง
+  const citizenToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  const targetUserId = report.lineUserId;
+
+  if (citizenToken && targetUserId && !targetUserId.startsWith("MOCK_")) {
+    try {
+      const historyList = [...(report.statusHistory || []), historyEntry];
+      function findHistory(statusKey) {
+        if (statusKey === "pending") return historyList.find(h => h.status === "pending" || h.status === "broken") || null;
+        return historyList.find(h => h.status === statusKey) || null;
+      }
+
+      const pendingHist = findHistory("pending");
+      const inProgressHist = findHistory("in_progress");
+      const resolvedHist = findHistory("resolved");
+
+      let currentRank = 1;
+      if (targetStatus === "in_progress") currentRank = 2;
+      if (targetStatus === "resolved") currentRank = 3;
+
+      const citizenUrl = "https://liff.line.me/2010313933-7q4q3WSR?page=track";
+      const card1Time = pendingHist ? formatThaiTime(pendingHist.timestamp) : "-";
+      const card1Note = pendingHist && pendingHist.note ? String(pendingHist.note) : "ระบบได้รับแจ้งเรื่องไฟฟ้าสาธารณะชำรุดเรียบร้อยแล้ว";
+
+      const card1 = {
+        type: "bubble",
+        styles: { header: { backgroundColor: "#dc2626" }, body: { backgroundColor: "#ffffff" }, footer: { backgroundColor: "#f8fafc", separator: true, separatorColor: "#e2e8f0" } },
+        header: {
+          type: "box", layout: "vertical", paddingAll: "md",
+          contents: [
+            { type: "text", text: "📌 ขั้นตอนที่ 1/3", color: "#fecaca", size: "xs", weight: "bold" },
+            { type: "text", text: "🚨 รับเรื่องแจ้งซ่อม", color: "#ffffff", size: "md", weight: "bold", margin: "xs" },
+            { type: "text", text: currentRank === 1 ? "👉 อยู่ในขั้นตอนนี้" : "✅ ดำเนินการแล้ว", color: "#ffffff", size: "xs", margin: "xs" }
+          ]
+        },
+        body: {
+          type: "box", layout: "vertical", paddingAll: "md", spacing: "xs",
+          contents: [
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "รหัสเสาไฟ:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: lightCode, weight: "bold", size: "xs", color: "#0ea5e9", flex: 5 }] },
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "อาการเสีย:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: String(report.issueType || "ไม่ระบุ"), weight: "bold", size: "xs", color: "#ef4444", flex: 5 }] },
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "สถานที่:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: lightName, size: "xs", color: "#334155", wrap: true, flex: 5 }] },
+            { type: "separator", color: "#f1f5f9", margin: "xs" },
+            { type: "box", layout: "vertical", spacing: "none", margin: "xs", contents: [{ type: "text", text: "🕒 เวลาที่รับเรื่อง:", size: "xs", color: "#64748b", weight: "bold" }, { type: "text", text: card1Time || "-", size: "xs", color: "#0f172a", weight: "bold", margin: "none" }, { type: "text", text: card1Note, size: "xs", color: "#475569", wrap: true, margin: "xs" }] }
+          ]
+        },
+        footer: { type: "box", layout: "vertical", paddingAll: "sm", contents: [{ type: "button", style: "secondary", height: "sm", color: "#dc2626", action: { type: "uri", label: "🔍 ติดตามรายละเอียด", uri: citizenUrl } }] }
+      };
+
+      if (report.images && report.images.length > 0 && String(report.images[0]).startsWith("http")) {
+        card1.hero = { type: "image", url: report.images[0], size: "full", aspectRatio: "20:11", aspectMode: "cover", action: { type: "uri", uri: report.images[0] } };
+      }
+
+      const activeCards = [card1];
+
+      if (currentRank >= 2) {
+        const card2Time = inProgressHist ? formatThaiTime(inProgressHist.timestamp) : "-";
+        const card2Note = inProgressHist && inProgressHist.note ? String(inProgressHist.note) : "ช่างไฟฟ้ากำลังลงพื้นที่ตรวจสอบและซ่อมแซม";
+        const card2 = {
+          type: "bubble",
+          styles: { header: { backgroundColor: "#d97706" }, body: { backgroundColor: "#ffffff" }, footer: { backgroundColor: "#f8fafc", separator: true, separatorColor: "#e2e8f0" } },
+          header: {
+            type: "box", layout: "vertical", paddingAll: "md",
+            contents: [
+              { type: "text", text: "⚙️ ขั้นตอนที่ 2/3", color: "#fde68a", size: "xs", weight: "bold" },
+              { type: "text", text: "🛠️ กำลังดำเนินการ", color: "#ffffff", size: "md", weight: "bold", margin: "xs" },
+              { type: "text", text: currentRank === 2 ? "👉 อยู่ในขั้นตอนนี้" : "✅ ดำเนินการแล้ว", color: "#ffffff", size: "xs", margin: "xs" }
+            ]
+          },
+          body: {
+            type: "box", layout: "vertical", paddingAll: "md", spacing: "xs",
+            contents: [
+              { type: "box", layout: "horizontal", contents: [{ type: "text", text: "รหัสเสาไฟ:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: lightCode, weight: "bold", size: "xs", color: "#0ea5e9", flex: 5 }] },
+              { type: "box", layout: "horizontal", contents: [{ type: "text", text: "สถานะงาน:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: "กำลังซ่อมแซม", weight: "bold", size: "xs", color: "#d97706", flex: 5 }] },
+              { type: "box", layout: "horizontal", contents: [{ type: "text", text: "สถานที่:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: lightName, size: "xs", color: "#334155", wrap: true, flex: 5 }] },
+              { type: "separator", color: "#f1f5f9", margin: "xs" },
+              { type: "box", layout: "vertical", spacing: "none", margin: "xs", contents: [{ type: "text", text: "🕒 เวลาที่อัปเดต:", size: "xs", color: "#64748b", weight: "bold" }, { type: "text", text: card2Time || "-", size: "xs", color: "#0f172a", weight: "bold", margin: "none" }, { type: "text", text: card2Note, size: "xs", color: "#475569", wrap: true, margin: "xs" }] }
+            ]
+          },
+          footer: { type: "box", layout: "vertical", paddingAll: "sm", contents: [{ type: "button", style: "secondary", height: "sm", color: "#d97706", action: { type: "uri", label: "🔍 ติดตามรายละเอียด", uri: citizenUrl } }] }
+        };
+        activeCards.push(card2);
+      }
+
+      if (currentRank >= 3) {
+        const card3Time = resolvedHist ? formatThaiTime(resolvedHist.timestamp) : "-";
+        const card3Note = resolvedHist && resolvedHist.note ? String(resolvedHist.note) : "แก้ไขและซ่อมแซมเสร็จสิ้นแล้ว ไฟสาธารณะพร้อมใช้งานปกติ";
+        const card3 = {
+          type: "bubble",
+          styles: { header: { backgroundColor: "#16a34a" }, body: { backgroundColor: "#ffffff" }, footer: { backgroundColor: "#f8fafc", separator: true, separatorColor: "#e2e8f0" } },
+          header: {
+            type: "box", layout: "vertical", paddingAll: "md",
+            contents: [
+              { type: "text", text: "✅ ขั้นตอนที่ 3/3", color: "#bbf7d0", size: "xs", weight: "bold" },
+              { type: "text", text: "🎉 ซ่อมแซมเสร็จสิ้น", color: "#ffffff", size: "md", weight: "bold", margin: "xs" },
+              { type: "text", text: "🎉 สำเร็จเรียบร้อยแล้ว", color: "#ffffff", size: "xs", margin: "xs" }
+            ]
+          },
+          body: {
+            type: "box", layout: "vertical", paddingAll: "md", spacing: "xs",
+            contents: [
+              { type: "box", layout: "horizontal", contents: [{ type: "text", text: "รหัสเสาไฟ:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: lightCode, weight: "bold", size: "xs", color: "#0ea5e9", flex: 5 }] },
+              { type: "box", layout: "horizontal", contents: [{ type: "text", text: "ผลการซ่อม:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: "ใช้งานได้ปกติ", weight: "bold", size: "xs", color: "#16a34a", flex: 5 }] },
+              { type: "box", layout: "horizontal", contents: [{ type: "text", text: "สถานที่:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: lightName, size: "xs", color: "#334155", wrap: true, flex: 5 }] },
+              { type: "separator", color: "#f1f5f9", margin: "xs" },
+              { type: "box", layout: "vertical", spacing: "none", margin: "xs", contents: [{ type: "text", text: "🕒 เวลาที่เสร็จสิ้น:", size: "xs", color: "#64748b", weight: "bold" }, { type: "text", text: card3Time || "-", size: "xs", color: "#0f172a", weight: "bold", margin: "none" }, { type: "text", text: card3Note, size: "xs", color: "#475569", wrap: true, margin: "xs" }] }
+            ]
+          },
+          footer: { type: "box", layout: "vertical", paddingAll: "sm", contents: [{ type: "button", style: "primary", height: "sm", color: "#16a34a", action: { type: "uri", label: "🔍 ดูประวัติแจ้งซ่อม", uri: citizenUrl } }] }
+        };
+        activeCards.push(card3);
+      }
+
+      const flexContents = activeCards.length === 1 ? activeCards[0] : { type: "carousel", contents: activeCards };
+      let statusHeaderLabel = targetStatus === "in_progress" ? "กำลังดำเนินการ" : "ซ่อมแซมเสร็จสิ้น";
+
+      await axios.post("https://api.line.me/v2/bot/message/push", {
+        to: targetUserId,
+        messages: [{ type: "flex", altText: `🔔 อัปเดตสถานะงานซ่อมเสาไฟ (${lightCode}): ${statusHeaderLabel}`, contents: flexContents }]
+      }, {
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${citizenToken}` }
+      }).catch(err => logger.error("Citizen push postback error:", err.response ? err.response.data : err.message));
+    } catch (err) {
+      logger.error("Error pushing notification to citizen:", err);
+    }
+  }
+
+  // ตอบกลับเจ้าหน้าที่ใน LINE
+  if (replyToken && staffToken) {
+    const updateTimeStr = formatThaiTime(new Date());
+    const replyFlex = {
+      type: "flex",
+      altText: `✅ อัปเดตสถานะสำเร็จ: ${lightCode}`,
+      contents: {
+        type: "bubble",
+        styles: {
+          header: { backgroundColor: targetStatus === "resolved" ? "#16a34a" : "#d97706" },
+          body: { backgroundColor: "#ffffff" }
+        },
+        header: {
+          type: "box", layout: "vertical", paddingAll: "md",
+          contents: [
+            { type: "text", text: "✅ อัปเดตสถานะสำเร็จ!", color: "#ffffff", size: "md", weight: "bold" },
+            { type: "text", text: `สถานะใหม่: ${statusLabel}`, color: "#ffffff", size: "xs", margin: "xs" }
+          ]
+        },
+        body: {
+          type: "box", layout: "vertical", paddingAll: "md", spacing: "xs",
+          contents: [
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "รหัสเสาไฟ:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: lightCode, weight: "bold", size: "xs", color: "#0ea5e9", flex: 5 }] },
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "สถานที่:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: lightName, size: "xs", color: "#334155", wrap: true, flex: 5 }] },
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "เวลาอัปเดต:", size: "xs", color: "#64748b", flex: 3 }, { type: "text", text: updateTimeStr, size: "xs", color: "#0f172a", weight: "bold", flex: 5 }] }
+          ]
+        }
+      }
+    };
+
+    await axios.post("https://api.line.me/v2/bot/message/reply", {
+      replyToken: replyToken,
+      messages: [replyFlex]
+    }, {
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${staffToken}` }
+    }).catch(err => logger.error("Reply flex error:", err.response ? err.response.data : err.message));
+  }
+}

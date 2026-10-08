@@ -212,21 +212,31 @@ function sendLineStaffNotification(reportData) {
               style: "primary",
               color: "#d97706",
               height: "sm",
-              action: { type: "uri", label: "🛠️ รับเรื่องซ่อม", uri: acceptUrl }
+              action: {
+                type: "postback",
+                label: "🛠️ รับเรื่องซ่อม",
+                data: `action=update_status&reportId=${reportIdStr}&status=in_progress`,
+                displayText: "🛠️ รับเรื่องซ่อม"
+              }
             },
             {
               type: "button",
               style: "primary",
               color: "#16a34a",
               height: "sm",
-              action: { type: "uri", label: "✅ ซ่อมเสร็จสิ้น", uri: completeUrl }
+              action: {
+                type: "postback",
+                label: "✅ ซ่อมเสร็จสิ้น",
+                data: `action=update_status&reportId=${reportIdStr}&status=resolved`,
+                displayText: "✅ ซ่อมเสร็จสิ้น"
+              }
             }
           ]
         },
         {
           type: "button",
           style: "primary",
-          color: "#16a34a",
+          color: "#ef4444",
           height: "sm",
           action: { type: "uri", label: "📋 อัปเดตสถานะผ่าน Dashboard", uri: officerUpdateUrl }
         }
