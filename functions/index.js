@@ -41,7 +41,8 @@ function getStatusLabel(status) {
 // (ส่งยืนยันหาประชาชนผ่าน Citizen Token + ส่งบรอดแคสต์หาเจ้าหน้าที่ผ่าน Staff Token)
 exports.sendLineNewReportNotification = onRequest({
   region: "asia-southeast1",
-  cors: true
+  cors: true,
+  invoker: "public"
 }, async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).send({ error: "Method Not Allowed" });
@@ -385,7 +386,8 @@ exports.sendLineNewReportNotification = onRequest({
 // 2. Cloud Function สำหรับแจ้งเตือนเมื่อเจ้าหน้าที่กดอัปเดตสถานะการซ่อม (ส่งหาประชาชน)
 exports.sendLineUserUpdateNotification = onRequest({
   region: "asia-southeast1",
-  cors: true
+  cors: true,
+  invoker: "public"
 }, async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).send({ error: "Method Not Allowed" });
@@ -772,7 +774,8 @@ exports.sendLineUserUpdateNotification = onRequest({
 // 3. Cloud Function สำหรับรองรับ LINE Bot Webhook (Postback จากเจ้าหน้าที่ใน LINE โดยตรง)
 exports.lineOfficerWebhook = onRequest({
   region: "asia-southeast1",
-  cors: true
+  cors: true,
+  invoker: "public"
 }, async (req, res) => {
   if (req.method !== "POST") {
     return res.status(200).send("OK");
