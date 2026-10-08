@@ -509,13 +509,56 @@ function displayReports() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const targetReportId = urlParams.get('reportId');
+  const targetAction = urlParams.get('action');
+
   if (targetReportId) {
     const targetReport = allReports.find(r => r.id === targetReportId || r.lightCode === targetReportId);
-    if (targetReport && !window._hasLocatedTargetReport) {
-      window._hasLocatedTargetReport = true;
-      setTimeout(() => {
-        locateLight(targetReport.lightId);
-      }, 500);
+    if (targetReport) {
+      if (!window._hasLocatedTargetReport) {
+        window._hasLocatedTargetReport = true;
+        setTimeout(() => {
+          locateLight(targetReport.lightId);
+        }, 500);
+      }
+
+      if (targetAction && !window._hasHandledUrlAction) {
+        window._hasHandledUrlAction = true;
+        const cleanUrl = window.location.pathname + '?reportId=' + encodeURIComponent(targetReportId);
+        window.history.replaceState({}, document.title, cleanUrl);
+
+        if (targetReport.status === targetAction) {
+          const actionLabel = targetAction === 'in_progress' ? 'กำลังดำเนินการ (รับเรื่องซ่อมแล้ว)' : 'ซ่อมเสร็จสิ้น';
+          Swal.fire({
+            icon: 'warning',
+            title: 'แจ้งเตือน: อัปเดตสถานะซ้ำ',
+            text: `รายการแจ้งซ่อม (${targetReport.lightCode || targetReport.id}) อยู่ในสถานะ "${actionLabel}" เรียบร้อยแล้ว`,
+            confirmButtonColor: '#0284c7'
+          });
+        } else if (targetReport.status === 'resolved' && targetAction === 'in_progress') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'แจ้งเตือน: ไม่สามารถเปลี่ยนสถานะได้',
+            text: `รายการแจ้งซ่อม (${targetReport.lightCode || targetReport.id}) ซ่อมเสร็จสิ้นเรียบร้อยแล้ว`,
+            confirmButtonColor: '#0284c7'
+          });
+        } else {
+          const actionText = targetAction === 'in_progress' ? 'รับเรื่องซ่อม' : 'ซ่อมเสร็จสิ้น';
+          Swal.fire({
+            title: `ยืนยันการ${actionText}`,
+            text: `คุณต้องการอัปเดตสถานะรายการ (${targetReport.lightCode || targetReport.id}) เป็น "${actionText}" ใช่หรือไม่?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: targetAction === 'resolved' ? '#16a34a' : '#d97706',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'ยืนยันอัปเดต',
+            cancelButtonText: 'ยกเลิก'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              updateReportStatus(targetReport.id, targetReport.lightId, targetAction);
+            }
+          });
+        }
+      }
     }
   }
 
@@ -601,6 +644,34 @@ function viewReportImage(imgUrl) {
 }
 
 function updateReportStatus(reportId, lightId, newStatus) {
+  let report = allReports.find(r => r.id === reportId);
+  if (!report && isDemoMode) {
+    const localReports = JSON.parse(localStorage.getItem('smart_reports')) || [];
+    report = localReports.find(r => r.id === reportId);
+  }
+
+  if (report) {
+    if (report.status === newStatus) {
+      const currentStatusLabel = report.status === 'in_progress' ? 'กำลังดำเนินการ (รับเรื่องซ่อมแล้ว)' : report.status === 'resolved' ? 'ซ่อมเสร็จสิ้นแล้ว' : 'รอดำเนินการ';
+      Swal.fire({
+        icon: 'warning',
+        title: 'แจ้งเตือน: อัปเดตสถานะซ้ำ',
+        text: `รายการแจ้งซ่อมนี้อยู่ในสถานะ "${currentStatusLabel}" เรียบร้อยแล้ว`,
+        confirmButtonColor: '#0284c7'
+      });
+      return;
+    }
+    if (report.status === 'resolved' && newStatus === 'in_progress') {
+      Swal.fire({
+        icon: 'warning',
+        title: 'แจ้งเตือน: ไม่สามารถเปลี่ยนสถานะได้',
+        text: 'รายการนี้ได้รับการซ่อมเสร็จสิ้นแล้ว ไม่สามารถย้อนกลับเป็นกำลังดำเนินการได้',
+        confirmButtonColor: '#0284c7'
+      });
+      return;
+    }
+  }
+
   const newLightStatus = newStatus === 'resolved' ? 'working' : 'pending';
 
   let statusLabel = 'รอดำเนินการ';
@@ -642,6 +713,13 @@ function updateReportStatus(reportId, lightId, newStatus) {
 
     sendLineUserUpdateNotification(reportId, newStatus);
     loadData();
+    Swal.fire({
+      icon: 'success',
+      title: 'อัปเดตสถานะสำเร็จ',
+      text: `อัปเดตสถานะเป็น "${statusLabel}" เรียบร้อยแล้ว`,
+      timer: 2000,
+      showConfirmButton: false
+    });
   } else {
     db.collection('reports').doc(reportId).update({
       status: newStatus,
@@ -653,6 +731,13 @@ function updateReportStatus(reportId, lightId, newStatus) {
       });
     }).then(() => {
       sendLineUserUpdateNotification(reportId, newStatus);
+      Swal.fire({
+        icon: 'success',
+        title: 'อัปเดตสถานะสำเร็จ',
+        text: `อัปเดตสถานะเป็น "${statusLabel}" เรียบร้อยแล้ว`,
+        timer: 2000,
+        showConfirmButton: false
+      });
     }).catch(err => console.error("Error updating status: ", err));
   }
 }

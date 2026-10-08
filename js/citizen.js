@@ -77,6 +77,8 @@ function sendLineStaffNotification(reportData) {
 
   const reportIdStr = reportData.id || reportData.reportId || "";
   const officerUpdateUrl = reportIdStr ? `${dashboardUrl}?reportId=${reportIdStr}` : dashboardUrl;
+  const acceptUrl = reportIdStr ? `${dashboardUrl}?reportId=${reportIdStr}&action=in_progress` : dashboardUrl;
+  const completeUrl = reportIdStr ? `${dashboardUrl}?reportId=${reportIdStr}&action=resolved` : dashboardUrl;
 
   const staffBodyContents = [
     {
@@ -198,12 +200,33 @@ function sendLineStaffNotification(reportData) {
           style: "primary",
           color: "#0284c7",
           height: "sm",
-          action: { type: "uri", label: "🗺️ นำทางไปยังจุดเกิดเหตุ", uri: navUrl }
+          action: { type: "uri", label: "🗺️ นำทาง", uri: navUrl }
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          spacing: "xs",
+          contents: [
+            {
+              type: "button",
+              style: "primary",
+              color: "#d97706",
+              height: "sm",
+              action: { type: "uri", label: "🛠️ รับเรื่องซ่อม", uri: acceptUrl }
+            },
+            {
+              type: "button",
+              style: "primary",
+              color: "#16a34a",
+              height: "sm",
+              action: { type: "uri", label: "✅ ซ่อมเสร็จสิ้น", uri: completeUrl }
+            }
+          ]
         },
         {
           type: "button",
           style: "primary",
-          color: "#8c0a13",
+          color: "#16a34a",
           height: "sm",
           action: { type: "uri", label: "📋 อัปเดตสถานะผ่าน Dashboard", uri: officerUpdateUrl }
         }
