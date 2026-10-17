@@ -284,162 +284,18 @@ function sendLineStaffNotification(reportData) {
     .catch(err => console.error("Error sending LINE broadcast flex notification:", err));
 }
 
-// ส่งข้อความ Flex Message แจ้งประชาชนว่า "ได้รับข้อมูลเรียบร้อย"
+// ส่งข้อมูลแจ้งเตือนไปยัง Backend (Telegram + LINE กลุ่มเจ้าหน้าที่ โดยไม่ส่งเข้าห้องแชทประชาชนเพื่อฟรี 100% 0 Quota)
 function sendLineCitizenSubmitNotification(reportData) {
   if (lineConfig.backendNewReportApiUrl) {
     fetch(lineConfig.backendNewReportApiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reportData })
+      body: JSON.stringify({ reportData, skipCitizenPush: true })
     })
       .then(res => res.json())
-      .then(data => console.log("New report notification sent via backend Cloud Function:", data))
+      .then(data => console.log("New report notification sent to staff backend:", data))
       .catch(err => console.error("Error calling backend new report API:", err));
-    return;
   }
-
-  const targetUserId = reportData.lineUserId;
-  if (!targetUserId || targetUserId.startsWith("MOCK_")) {
-    console.log("No real lineUserId or mock user. Skipping citizen notification.");
-    return;
-  }
-
-  const citizenUrl = "https://liff.line.me/2010313933-7q4q3WSR?page=track";
-
-  const citizenTimeStr = new Date().toLocaleDateString('th-TH', {
-    day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit'
-  }) + ' น.';
-
-  const flexMessage = {
-    type: "bubble",
-    styles: {
-      header: { backgroundColor: "#dc2626" },
-      body: { backgroundColor: "#ffffff" },
-      footer: { backgroundColor: "#f8fafc", separator: true, separatorColor: "#e2e8f0" }
-    },
-    header: {
-      type: "box",
-      layout: "vertical",
-      paddingAll: "md",
-      contents: [
-        { type: "text", text: "📌 ขั้นตอนที่ 1/3", color: "#fecaca", size: "xs", weight: "bold" },
-        { type: "text", text: "🚨 ส่งข้อมูลแจ้งซ่อมสำเร็จ", color: "#ffffff", size: "md", weight: "bold", margin: "xs" },
-        { type: "text", text: "👉 อยู่ในขั้นตอนนี้ (ได้รับเรื่องแล้ว)", color: "#ffffff", size: "xs", margin: "xs" }
-      ]
-    },
-    body: {
-      type: "box",
-      layout: "vertical",
-      paddingAll: "md",
-      spacing: "xs",
-      contents: [
-        {
-          type: "box",
-          layout: "horizontal",
-          contents: [
-            { type: "text", text: "รหัสเสาไฟ:", size: "xs", color: "#64748b", flex: 3 },
-            { type: "text", text: String(reportData.lightCode || "-"), weight: "bold", size: "xs", color: "#0ea5e9", flex: 5 }
-          ]
-        },
-        {
-          type: "box",
-          layout: "horizontal",
-          contents: [
-            { type: "text", text: "อาการเสีย:", size: "xs", color: "#64748b", flex: 3 },
-            { type: "text", text: String(reportData.issueType || "-"), weight: "bold", size: "xs", color: "#ef4444", flex: 5 }
-          ]
-        },
-        {
-          type: "box",
-          layout: "horizontal",
-          contents: [
-            { type: "text", text: "สถานที่:", size: "xs", color: "#64748b", flex: 3 },
-            { type: "text", text: String(reportData.lightName || "-"), size: "xs", color: "#334155", wrap: true, flex: 5 }
-          ]
-        },
-        { type: "separator", color: "#f1f5f9", margin: "xs" },
-        {
-          type: "box",
-          layout: "vertical",
-          spacing: "none",
-          margin: "xs",
-          contents: [
-            { type: "text", text: "🕒 เวลาที่รับเรื่อง:", size: "xs", color: "#64748b", weight: "bold" },
-            { type: "text", text: citizenTimeStr || "-", size: "xs", color: "#0f172a", weight: "bold", margin: "none" },
-            { type: "text", text: "ระบบได้รับแจ้งเรื่องไฟฟ้าสาธารณะชำรุดเรียบร้อยแล้ว ช่างไฟฟ้าจะเข้าดำเนินการตรวจสอบ", size: "xs", color: "#475569", wrap: true, margin: "xs" }
-          ]
-        }
-      ]
-    },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      paddingAll: "sm",
-      contents: [
-        {
-          type: "button",
-          style: "secondary",
-          height: "sm",
-          color: "#dc2626",
-          action: { type: "uri", label: "🔍 ติดตามสถานะการซ่อม", uri: citizenUrl }
-        }
-      ]
-    }
-  };
-
-  if (reportData.images && reportData.images.length > 0 && String(reportData.images[0]).startsWith('http')) {
-    flexMessage.hero = {
-      type: "image",
-      url: reportData.images[0],
-      size: "full",
-      aspectRatio: "20:11",
-      aspectMode: "cover",
-      action: { type: "uri", uri: reportData.images[0] }
-    };
-  }
-
-  const payload = {
-    to: targetUserId,
-    messages: [
-      {
-        type: "flex",
-        altText: `✅ ส่งข้อมูลแจ้งซ่อมสำเร็จ: ${reportData.lightCode}`,
-        contents: flexMessage
-      }
-    ]
-  };
-
-  if (reportData.images && reportData.images.length > 0 && reportData.images[0].startsWith('http')) {
-    flexMessage.hero = {
-      type: "image",
-      url: reportData.images[0],
-      size: "full",
-      aspectRatio: "20:13",
-      aspectMode: "cover",
-      action: { type: "uri", uri: reportData.images[0] }
-    };
-  }
-
-  const url = "https://api.line.me/v2/bot/message/push";
-  const requestUrl = lineConfig.useCorsProxy ? (lineConfig.corsProxyUrl + url) : url;
-
-  fetch(requestUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + lineConfig.citizenAccessToken
-    },
-    body: JSON.stringify(payload)
-  })
-    .then(async response => {
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error("HTTP status " + response.status + ": " + errText);
-      }
-      return response.json();
-    })
-    .then(data => console.log("LINE push notification sent to citizen upon submission:", data))
-    .catch(err => console.error("Error sending LINE notification to citizen upon submission:", err));
 }
 
 // แสดงคำแนะนำการใช้งานป๊อปอัป SweetAlert2
@@ -1583,13 +1439,50 @@ async function handleReportSubmit(e) {
       });
 
       Swal.fire({
-        title: '<span style="font-size: 20px; font-weight: 700; color: #16a34a; font-family: var(--font-family);">ส่งรายงานสำเร็จ!</span>',
-        text: 'ขอบพระคุณสำหรับข้อมูล เทศบาลได้รับเรื่องแจ้งเสียเสาไฟและรูปภาพเรียบร้อยแล้วและจะรีบดำเนินการซ่อมแซม',
+        title: '<span style="font-size: 20px; font-weight: 700; color: #16a34a; font-family: var(--font-family);">🎉 ส่งข้อมูลแจ้งซ่อมสำเร็จ!</span>',
+        html: `
+          <div style="text-align: left; font-family: 'Inter', 'Noto Sans Thai', sans-serif; font-size: 14px; line-height: 1.6; color: #334155;">
+            <p style="margin-bottom: 10px; font-size: 13px; color: #64748b; text-align: center;">เทศบาลตำบลตันหยงมัสได้รับเรื่องเรียบร้อยแล้ว</p>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="color: #64748b;">รหัสเสาไฟ:</span>
+                <strong style="color: #0284c7;">${targetLight.code || '-'}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="color: #64748b;">อาการเสีย:</span>
+                <strong style="color: #ef4444;">${issueType || '-'}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: #64748b;">สถานที่:</span>
+                <span style="color: #0f172a; text-align: right; max-width: 60%;">${targetLight.name || '-'}</span>
+              </div>
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 10px 12px; margin-top: 10px; text-align: left;">
+              <div style="font-weight: 700; color: #166534; font-size: 13px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-circle-check" style="color: #16a34a;"></i> บันทึกข้อมูลการแจ้งซ่อมเรียบร้อยแล้ว
+              </div>
+              <p style="font-size: 12px; color: #15803d; margin: 0; line-height: 1.5;">
+                ท่านสามารถติดตามสถานะการซ่อมได้ตลอด 24 ชม. ผ่านทาง <b>ริชเมนู</b> ใน LINE หรือพิมพ์คำว่า <b>"ติดตามสถานะ"</b> ในห้องแชทได้ทันทีครับ
+              </p>
+            </div>
+          </div>
+        `,
         icon: 'success',
         confirmButtonText: 'ตกลง',
+        showCancelButton: true,
+        cancelButtonText: '🔍 ติดตามสถานะของฉัน',
+        confirmButtonColor: '#16a34a',
+        cancelButtonColor: '#0284c7',
         background: '#ffffff',
-        color: '#0f172a',
-        confirmButtonColor: '#16a34a'
+        color: '#0f172a'
+      }).then((result) => {
+        if (result.dismiss === Swal.DismissReason.cancel) {
+          switchSidebarTab('track');
+          const sidebar = document.querySelector('.sidebar');
+          if (sidebar) {
+            sidebar.style.display = 'flex';
+            sidebar.classList.add('active');
+          }
+        }
       });
       resetImageUpload();
       closeReportPanel();

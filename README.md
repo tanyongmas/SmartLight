@@ -93,13 +93,19 @@ const firebaseConfig = {
 };
 ```
 
-### 3. การตั้งค่า LINE Official Account, LIFF & Webhook
+### 3. การตั้งค่า LINE Official Account, LIFF, Webhook & Telegram
 1. สร้าง **LINE Official Account (Bot)** สำหรับประชาชนและเจ้าหน้าที่ ใน [LINE Official Account Manager](https://manager.line.biz/)
 2. สร้าง **LINE Login Channel** และเปิดใช้งาน **LIFF App** ใน [LINE Developers Console](https://developers.line.biz/)
 3. ตั้งค่า Webhook สำหรับช่องเจ้าหน้าที่ (Officer Bot Channel):
-   - **Webhook URL**: `https://lineofficerwebhook-fty4674n2q-as.a.run.app` *(หรือ `https://asia-southeast1-tm-municipal-smartlight.cloudfunctions.net/lineOfficerWebhook`)*
+   - **Webhook URL**: `https://asia-southeast1-tm-municipal-smartlight.cloudfunctions.net/lineOfficerWebhook`
    - **Use Webhook**: เปิดใช้งานเป็น **ON** 🟢
-4. นำ LIFF ID มาใส่ใน [`js/config.js`](file:///js/config.js):
+4. ตั้งค่า Webhook สำหรับช่องประชาชน (Citizen Bot Channel):
+   - **Webhook URL**: `https://asia-southeast1-tm-municipal-smartlight.cloudfunctions.net/lineCitizenWebhook` (สำหรับ Auto-Reply ฟรี 100%)
+   - **Use Webhook**: เปิดใช้งานเป็น **ON** 🟢
+5. ช่องทางแจ้งเตือน **Telegram Bot** เจ้าหน้าที่ (ฟรี 100% ไม่จำกัดโควต้า):
+   - บอทจะส่งแจ้งเตือนเคสใหม่พร้อมรูปภาพและปุ่มนำทางเข้ากลุ่ม Telegram อัตโนมัติ
+   - ตั้งค่าผ่าน `TELEGRAM_BOT_TOKEN` และ `TELEGRAM_CHAT_ID` ใน `functions/.env`
+6. นำ LIFF ID มาใส่ใน [`js/config.js`](file:///js/config.js):
    ```javascript
    const liffConfig = {
      liffId: "YOUR_LIFF_ID"
