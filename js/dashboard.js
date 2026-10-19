@@ -54,8 +54,8 @@ function startDashboardApp() {
     yearSelect.value = curYearStr;
   }
 
-  initFirebase();
   initMap();
+  initFirebase();
   initFormListeners();
 }
 
@@ -173,6 +173,7 @@ function doLogin(e) {
   return false;
 }
 
+const handleLoginSubmit = doLogin;
 window.doLogin = doLogin;
 window.handleLoginSubmit = doLogin;
 
@@ -194,7 +195,7 @@ function initFirebase() {
   // 2. ผูกการกดปุ่ม "เข้าสู่ระบบ" บน Login Form
   const loginForm = document.getElementById('loginForm');
   if (loginForm) {
-    loginForm.onsubmit = handleLoginSubmit;
+    loginForm.onsubmit = doLogin;
   }
 
   // 3. เชื่อมต่อบริการ Firebase Auth & Firestore
@@ -358,6 +359,107 @@ function loadData() {
   if (isDemoMode) {
     allLights = JSON.parse(localStorage.getItem('smart_lights')) || [];
     allReports = JSON.parse(localStorage.getItem('smart_reports')) || [];
+
+    if (allLights.length === 0) {
+      allLights = [
+        {
+          id: "pole_01",
+          code: "L-101",
+          name: "หน้าอาคารสำนักงานเทศบาลตำบลตันหยงมัส",
+          lat: 6.29445,
+          lng: 101.72362,
+          status: "working",
+          zone: "ชุมชนตลาดกลางผลไม้",
+          lastUpdated: new Date().toISOString()
+        },
+        {
+          id: "pole_02",
+          code: "L-102",
+          name: "ใกล้สี่แยกตันหยงมัส",
+          lat: 6.29520,
+          lng: 101.72450,
+          status: "broken",
+          zone: "ชุมชนโรงเรียนแหลมทองวิทยา",
+          lastUpdated: new Date().toISOString()
+        },
+        {
+          id: "pole_03",
+          code: "L-103",
+          name: "บริเวณใกล้สถานีรถไฟตันหยงมัส",
+          lat: 6.29350,
+          lng: 101.72250,
+          status: "pending",
+          zone: "ชุมชนวงเวียนลองกอง",
+          lastUpdated: new Date().toISOString()
+        },
+        {
+          id: "pole_04",
+          code: "L-104",
+          name: "หน้าโรงเรียนอนุบาลระแงะ",
+          lat: 6.29600,
+          lng: 101.72180,
+          status: "working",
+          zone: "ชุมชนโรงเรียนดารุสสลาม",
+          lastUpdated: new Date().toISOString()
+        }
+      ];
+      localStorage.setItem('smart_lights', JSON.stringify(allLights));
+    }
+
+    if (allReports.length === 0) {
+      allReports = [
+        {
+          id: "rep_01",
+          lightId: "pole_02",
+          lightCode: "L-102",
+          lightName: "ใกล้สี่แยกตันหยงมัส",
+          zone: "ชุมชนโรงเรียนแหลมทองวิทยา",
+          issueType: "ไฟดับสนิท",
+          detail: "หลอดไฟดับสนิททั้งต้นตั้งแต่ช่วงค่ำ",
+          reporterName: "ประชาชนในพื้นที่",
+          reporterPhone: "081-234-5678",
+          status: "broken",
+          timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+          statusHistory: [
+            {
+              status: "pending",
+              label: "ได้รับเรื่องแล้ว",
+              timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+              note: "ระบบได้รับแจ้งเรื่องไฟฟ้าสาธารณะชำรุดเรียบร้อยแล้ว"
+            }
+          ]
+        },
+        {
+          id: "rep_02",
+          lightId: "pole_03",
+          lightCode: "L-103",
+          lightName: "บริเวณใกล้สถานีรถไฟตันหยงมัส",
+          zone: "ชุมชนวงเวียนลองกอง",
+          issueType: "ไฟกระพริบไม่หยุด",
+          detail: "ไฟติดๆ ดับๆ แสงสว่างไม่สม่ำเสมอ",
+          reporterName: "นายสมชาย ใจดี",
+          reporterPhone: "089-987-6543",
+          status: "pending",
+          timestamp: new Date(Date.now() - 86400000).toISOString(),
+          statusHistory: [
+            {
+              status: "pending",
+              label: "ได้รับเรื่องแล้ว",
+              timestamp: new Date(Date.now() - 86400000).toISOString(),
+              note: "ระบบได้รับแจ้งเรื่องไฟฟ้าสาธารณะชำรุดเรียบร้อยแล้ว"
+            },
+            {
+              status: "in_progress",
+              label: "กำลังดำเนินการ",
+              timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
+              note: "เจ้าหน้าที่ทีมช่างไฟฟ้ากำลังเตรียมอะไหล่เข้าซ่อมแซม"
+            }
+          ]
+        }
+      ];
+      localStorage.setItem('smart_reports', JSON.stringify(allReports));
+    }
+
     updateUI();
   } else {
     db.collection('lights').onSnapshot((snapshot) => {
@@ -408,6 +510,7 @@ function updateStats() {
 }
 
 function displayLightsOnMap() {
+  if (!markersGroup) return;
   markersGroup.clearLayers();
   const bounds = [];
 
@@ -748,27 +851,6 @@ function sendLineUserUpdateNotification(reportId, newStatus) {
   // ประชาชนสามารถพิมพ์คำว่า "สถานะ" หรือ "ติดตาม" ในห้องแชท หรือกด Rich Menu เพื่อดูสถานะได้ฟรีตลอดชีพ
   console.log("Zero-Quota Mode: Citizen Push notification is disabled.");
   return;
-}
-
-
-  if (!lineConfig.channelAccessToken) {
-    console.warn("No backend API or Channel Access Token configured. Skipping LINE Push Notification safely.");
-    return;
-  }
-
-  if (isDemoMode) {
-    if (!reportData) return;
-    triggerLineNotification(reportData, newStatus);
-  } else {
-    if (db) {
-      db.collection('reports').doc(reportId).get().then(doc => {
-        if (doc.exists) {
-          reportData = doc.data();
-          triggerLineNotification(reportData, newStatus);
-        }
-      }).catch(err => console.error("Error getting report for push notification:", err));
-    }
-  }
 }
 
 function triggerLineNotification(report, newStatus) {
