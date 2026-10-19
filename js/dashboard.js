@@ -1555,6 +1555,48 @@ function downloadQrCode() {
   }
 }
 
+function generateStickerCardHtml(light, qrElementId) {
+  return `
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 100%; width: 100%; font-family: 'Noto Sans Thai', sans-serif; color: #0f172a; background: #ffffff; box-sizing: border-box; padding: 2px 4px;">
+      
+      <!-- Header: Logo & Title (แบบที่ 1: โลโก้ด้านบน ข้อความอยู่กึ่งกลาง 100%) -->
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; border-bottom: 2px solid #0f172a; padding-bottom: 4px;">
+        <img src="assets/logo.png" alt="โลโก้เทศบาล" style="height: 30px; width: auto; object-fit: contain; margin-bottom: 2px;">
+        <div style="text-align: center; width: 100%;">
+          <h4 style="font-size: 13px; font-weight: 800; margin: 0; color: #0f172a; font-family: 'Noto Sans Thai', sans-serif; line-height: 1.2;">เทศบาลตำบลตันหยงมัส</h4>
+          <p style="font-size: 9px; font-weight: 600; margin: 1px 0 0 0; color: #475569; font-family: 'Noto Sans Thai', sans-serif; line-height: 1.2;">ระบบแจ้งซ่อมไฟฟ้าสาธารณะอัจฉริยะ</p>
+        </div>
+      </div>
+
+      <!-- Alert Banner -->
+      <div style="margin: 3px 0 2px 0; width: 100%; text-align: center;">
+        <span style="font-size: 11px; font-weight: 800; color: #dc2626; text-transform: uppercase; background: #fef2f2; border: 1.5px solid #fca5a5; padding: 2px 12px; border-radius: 10px; display: inline-block; font-family: 'Noto Sans Thai', sans-serif; letter-spacing: 0.3px;">
+          <i class="fa-solid fa-circle-exclamation"></i> พบไฟดับ/ชำรุด สแกนแจ้งซ่อมที่นี่
+        </span>
+      </div>
+
+      <!-- QR Code Container (ขนาดใหญ่เด่นชัด เกือบเต็มช่อง) -->
+      <div style="background: #ffffff; padding: 6px; border-radius: 12px; border: 2px solid #0f172a; display: flex; align-items: center; justify-content: center; margin: 2px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
+        <div id="${qrElementId}"></div>
+      </div>
+
+      <!-- Footer: Pole Code & Details -->
+      <div style="width: 100%; text-align: center; margin-top: 2px;">
+        <div style="font-weight: 900; font-size: 20px; color: #ffffff; background: #0f172a; display: inline-block; padding: 2px 18px; border-radius: 8px; font-family: 'Noto Sans Thai', monospace, sans-serif; letter-spacing: 0.5px; margin-bottom: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+          ${escapeHtml(light.code)}
+        </div>
+        <div style="font-size: 11px; font-weight: 700; color: #0f172a; line-height: 1.2; font-family: 'Noto Sans Thai', sans-serif; word-break: break-word; margin: 1px 0;">
+          ${escapeHtml(light.name)}
+        </div>
+        <div style="font-size: 9px; font-weight: 600; color: #475569; margin-top: 1px; font-family: 'Noto Sans Thai', sans-serif;">
+          เขตการดูแล: ${escapeHtml(light.zone || 'ไม่ระบุ')}
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
 function printQrSticker() {
   if (!activeModalLightId) return;
 
@@ -1572,57 +1614,26 @@ function printQrSticker() {
 
     const card = document.createElement('div');
     card.className = 'print-sticker-card';
-    card.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 100%; width: 100%; font-family: 'Noto Sans Thai', sans-serif; color: #0f172a; background: #ffffff; box-sizing: border-box;">
-        
-        <!-- Header: Logo & Title -->
-        <div style="display: flex; align-items: center; justify-content: center; gap: 14px; border-bottom: 3px solid #0f172a; padding-bottom: 12px; width: 100%;">
-          <img src="assets/logo.png" alt="โลโก้เทศบาล" style="height: 60px; width: auto; object-fit: contain;">
-          <div style="text-align: left;">
-            <h4 style="font-size: 18px; font-weight: 800; margin: 0; color: #0f172a; font-family: 'Noto Sans Thai', sans-serif;">เทศบาลตำบลตันหยงมัส</h4>
-            <p style="font-size: 12px; font-weight: 600; margin: 2px 0 0 0; color: #475569; font-family: 'Noto Sans Thai', sans-serif;">ระบบแจ้งซ่อมไฟฟ้าสาธารณะอัจฉริยะ</p>
-          </div>
-        </div>
-
-        <!-- Alert Banner -->
-        <div style="margin: 10px 0 6px 0; width: 100%; text-align: center;">
-          <span style="font-size: 18px; font-weight: 800; color: #dc2626; text-transform: uppercase; background: #fef2f2; border: 2px solid #fca5a5; padding: 8px 24px; border-radius: 20px; display: inline-block; font-family: 'Noto Sans Thai', sans-serif;">
-            <i class="fa-solid fa-circle-exclamation"></i> พบไฟดับ/ชำรุด สแกนแจ้งซ่อมที่นี่
-          </span>
-        </div>
-
-        <!-- QR Code Container -->
-        <div style="background: #ffffff; padding: 14px; border-radius: 16px; border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center; margin: 8px 0;">
-          <div id="bulk-qr-${light.id}"></div>
-        </div>
-
-        <!-- Footer: Pole Code & Details -->
-        <div style="width: 100%; text-align: center; margin-top: 4px;">
-          <div style="font-weight: 900; font-size: 26px; color: #ffffff; background: #0f172a; display: inline-block; padding: 6px 24px; border-radius: 12px; font-family: 'Noto Sans Thai', monospace, sans-serif; letter-spacing: 1px; margin-bottom: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            ${escapeHtml(light.code)}
-          </div>
-          <div style="font-size: 15px; font-weight: 700; color: #0f172a; line-height: 1.35; font-family: 'Noto Sans Thai', sans-serif; word-break: break-word; margin: 4px 0;">
-            ${escapeHtml(light.name)}
-          </div>
-          <div style="font-size: 12px; font-weight: 600; color: #475569; margin-top: 2px; font-family: 'Noto Sans Thai', sans-serif;">
-            เขตการดูแล: ${escapeHtml(light.zone || 'ไม่ระบุ')}
-          </div>
-        </div>
-
-      </div>
-    `;
+    const qrDomId = `single-qr-${light.id}`;
+    card.innerHTML = generateStickerCardHtml(light, qrDomId);
 
     pageDiv.appendChild(card);
     printArea.appendChild(pageDiv);
 
-    new QRCode(document.getElementById(`bulk-qr-${light.id}`), {
-      text: citizenUrl,
-      width: 300,
-      height: 300,
-      colorDark: "#000000",
-      colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.H
-    });
+    const qrContainer = document.getElementById(qrDomId);
+    if (qrContainer) {
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: citizenUrl,
+        width: 220,
+        height: 220,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      const canvasEl = qrContainer.querySelector('canvas');
+      if (canvasEl) canvasEl.style.display = 'none';
+    }
 
     setTimeout(() => { window.print(); }, 500);
   }
@@ -1742,78 +1753,45 @@ function printBulkQr() {
   if (!printArea) return;
 
   printArea.innerHTML = '';
-  const chunkSize = 2;
+  const chunkSize = 4;
   for (let i = 0; i < printQueue.length; i += chunkSize) {
     const chunk = printQueue.slice(i, i + chunkSize);
 
     const pageDiv = document.createElement('div');
     pageDiv.className = 'print-page';
 
-    chunk.forEach(id => {
+    const qrItemsToRender = [];
+
+    chunk.forEach((id, itemIdx) => {
       const light = allLights.find(l => l.id === id);
       if (light) {
         const citizenUrl = getCitizenUrl(light.id);
-
         const card = document.createElement('div');
         card.className = 'print-sticker-card';
-        card.innerHTML = `
-          <div style="display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 100%; width: 100%; font-family: 'Noto Sans Thai', sans-serif; color: #0f172a; background: #ffffff; box-sizing: border-box;">
-            
-            <!-- Header: Logo & Title -->
-            <div style="display: flex; align-items: center; justify-content: center; gap: 14px; border-bottom: 3px solid #0f172a; padding-bottom: 12px; width: 100%;">
-              <img src="assets/logo.png" alt="โลโก้เทศบาล" style="height: 60px; width: auto; object-fit: contain;">
-              <div style="text-align: left;">
-                <h4 style="font-size: 18px; font-weight: 800; margin: 0; color: #0f172a; font-family: 'Noto Sans Thai', sans-serif;">เทศบาลตำบลตันหยงมัส</h4>
-                <p style="font-size: 12px; font-weight: 600; margin: 2px 0 0 0; color: #475569; font-family: 'Noto Sans Thai', sans-serif;">ระบบแจ้งซ่อมไฟฟ้าสาธารณะอัจฉริยะ</p>
-              </div>
-            </div>
-
-            <!-- Alert Banner -->
-            <div style="margin: 10px 0 6px 0; width: 100%; text-align: center;">
-              <span style="font-size: 18px; font-weight: 800; color: #dc2626; text-transform: uppercase; background: #fef2f2; border: 2px solid #fca5a5; padding: 8px 24px; border-radius: 20px; display: inline-block; font-family: 'Noto Sans Thai', sans-serif;">
-                <i class="fa-solid fa-circle-exclamation"></i> พบไฟดับ/ชำรุด สแกนแจ้งซ่อมที่นี่
-              </span>
-            </div>
-
-            <!-- QR Code Container -->
-            <div style="background: #ffffff; padding: 14px; border-radius: 16px; border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center; margin: 8px 0;">
-              <div id="bulk-qr-${light.id}"></div>
-            </div>
-
-            <!-- Footer: Pole Code & Details -->
-            <div style="width: 100%; text-align: center; margin-top: 4px;">
-              <div style="font-weight: 900; font-size: 26px; color: #ffffff; background: #0f172a; display: inline-block; padding: 6px 24px; border-radius: 12px; font-family: 'Noto Sans Thai', monospace, sans-serif; letter-spacing: 1px; margin-bottom: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                ${escapeHtml(light.code)}
-              </div>
-              <div style="font-size: 15px; font-weight: 700; color: #0f172a; line-height: 1.35; font-family: 'Noto Sans Thai', sans-serif; word-break: break-word; margin: 4px 0;">
-                ${escapeHtml(light.name)}
-              </div>
-              <div style="font-size: 12px; font-weight: 600; color: #475569; margin-top: 2px; font-family: 'Noto Sans Thai', sans-serif;">
-                เขตการดูแล: ${escapeHtml(light.zone || 'ไม่ระบุ')}
-              </div>
-            </div>
-
-          </div>
-        `;
+        const qrDomId = `bulk-qr-${light.id}-${i}-${itemIdx}`;
+        card.innerHTML = generateStickerCardHtml(light, qrDomId);
 
         pageDiv.appendChild(card);
+        qrItemsToRender.push({ qrDomId, citizenUrl });
       }
     });
 
     printArea.appendChild(pageDiv);
 
-    chunk.forEach(id => {
-      const light = allLights.find(l => l.id === id);
-      if (light) {
-        const citizenUrl = getCitizenUrl(light.id);
-        new QRCode(document.getElementById(`bulk-qr-${light.id}`), {
-          text: citizenUrl,
-          width: 300,
-          height: 300,
+    qrItemsToRender.forEach(item => {
+      const container = document.getElementById(item.qrDomId);
+      if (container) {
+        container.innerHTML = '';
+        new QRCode(container, {
+          text: item.citizenUrl,
+          width: 220,
+          height: 220,
           colorDark: "#000000",
           colorLight: "#ffffff",
           correctLevel: QRCode.CorrectLevel.H
         });
+        const canvasEl = container.querySelector('canvas');
+        if (canvasEl) canvasEl.style.display = 'none';
       }
     });
   }

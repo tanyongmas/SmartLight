@@ -434,7 +434,7 @@
 
     @media print {
       @page {
-        size: A4 landscape;
+        size: A4 portrait;
         margin: 0;
         /* เคลียร์มาร์จินขอบของบราวเซอร์ออกเพื่อให้เราจัดระยะด้วยหน้า .print-page ได้อย่างแม่นยำ */
       }
@@ -474,35 +474,47 @@
       .print-page {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
-        grid-template-rows: 1fr !important;
-        gap: 14mm !important;
+        grid-template-rows: repeat(2, 1fr) !important;
+        gap: 6mm !important;
         width: 100% !important;
         height: 100vh !important;
         max-height: 100vh !important;
         box-sizing: border-box !important;
-        padding: 10mm 12mm !important;
+        padding: 8mm 10mm !important;
         page-break-after: always !important;
         break-after: page !important;
         overflow: hidden !important;
         position: relative !important;
       }
 
-      /* เส้นแนวรอยตัดแบ่งครึ่งกระดาษตรงกลาง (Vertical Cut Line) */
-      .print-page::after {
+      /* เส้นแนวรอยตัดแบ่งครึ่งกระดาษตรงกลางแนวตั้ง (Vertical Cut Line) */
+      .print-page::before {
         content: "" !important;
         position: absolute !important;
-        top: 6mm !important;
-        bottom: 6mm !important;
+        top: 4mm !important;
+        bottom: 4mm !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
         border-left: 1.5px dashed #94a3b8 !important;
         z-index: 10 !important;
       }
 
+      /* เส้นแนวรอยตัดแบ่งครึ่งกระดาษตรงกลางแนวนอน (Horizontal Cut Line) */
+      .print-page::after {
+        content: "" !important;
+        position: absolute !important;
+        left: 4mm !important;
+        right: 4mm !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        border-top: 1.5px dashed #94a3b8 !important;
+        z-index: 10 !important;
+      }
+
       .print-sticker-card {
-        border: 2.5px dashed #0f172a !important;
-        border-radius: 16px !important;
-        padding: 16px 20px !important;
+        border: 2px dashed #0f172a !important;
+        border-radius: 12px !important;
+        padding: 6px 8px !important;
         text-align: center !important;
         background: #ffffff !important;
         page-break-inside: avoid !important;
@@ -514,6 +526,16 @@
         box-sizing: border-box !important;
         height: 100% !important;
         width: 100% !important;
+      }
+
+      /* ซ่อน canvas เพื่อไม่ให้แสดงซ้อนกับ img ที่ QRCode.js สร้าง */
+      #bulkPrintArea canvas {
+        display: none !important;
+      }
+
+      #bulkPrintArea img {
+        display: block !important;
+        margin: 0 auto !important;
       }
     }
 
