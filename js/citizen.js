@@ -876,13 +876,33 @@ function getMarkerIcon(status) {
   });
 }
 
+function isValidLatLng(lat, lng) {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180 &&
+    !(lat === 0 && lng === 0)
+  );
+}
+
 function displayLightsOnMap(lights) {
   markersGroup.clearLayers();
   if (lights.length === 0) return;
 
   const bounds = [];
+  const allValidBounds = [];
   lights.forEach(light => {
-    const marker = L.marker([light.lat, light.lng], { icon: getMarkerIcon(light.status) });
+    const lat = Number(light.lat);
+    const lng = Number(light.lng);
+    if (!isValidLatLng(lat, lng)) {
+      console.warn(`Skipping light with invalid coordinates: ${light.code || light.id}`, light.lat, light.lng);
+      return;
+    }
+
+    const marker = L.marker([lat, lng], { icon: getMarkerIcon(light.status) });
 
     const statusText = light.status === 'working' ? 'ใช้งานปกติ' : light.status === 'pending' ? 'กำลังซ่อมแซม' : 'ไฟดับ/ชำรุด';
     const badgeClass = light.status === 'working' ? 'badge-working' : light.status === 'pending' ? 'badge-pending' : 'badge-broken';
@@ -913,12 +933,15 @@ function displayLightsOnMap(lights) {
 
     marker.bindPopup(popupContent);
     markersGroup.addLayer(marker);
-    bounds.push([light.lat, light.lng]);
+    allValidBounds.push([lat, lng]);
+    if (lat >= 5 && lat <= 21 && lng >= 97 && lng <= 106) {
+      bounds.push([lat, lng]);
+    }
   });
 
-  const urlParams = new URLSearchParams(window.location.search);
-  if (!urlParams.has('lightId') && bounds.length > 0) {
-    map.fitBounds(bounds, { padding: [50, 50] });
+  const fitTargets = bounds.length > 0 ? bounds : allValidBounds;
+  if (!getQueryParam('lightId') && fitTargets.length > 0) {
+    map.fitBounds(fitTargets, { padding: [50, 50], maxZoom: 17 });
   }
 }
 
@@ -961,11 +984,15 @@ function checkUrlParams() {
   if (lightId) {
     const selectedLight = allLights.find(l => l.id === lightId);
     if (selectedLight) {
-      map.setView([selectedLight.lat, selectedLight.lng], 18);
+      const lat = Number(selectedLight.lat);
+      const lng = Number(selectedLight.lng);
+      if (isValidLatLng(lat, lng)) {
+        map.setView([lat, lng], 18);
+      }
       openReportPanel(lightId);
 
       markersGroup.eachLayer(layer => {
-        if (layer.getLatLng().lat === selectedLight.lat && layer.getLatLng().lng === selectedLight.lng) {
+        if (layer.getLatLng().lat === lat && layer.getLatLng().lng === lng) {
           layer.openPopup();
         }
       });

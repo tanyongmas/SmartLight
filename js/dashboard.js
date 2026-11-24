@@ -509,13 +509,33 @@ function updateStats() {
   document.getElementById('statPending').innerText = pending;
 }
 
+function isValidLatLng(lat, lng) {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180 &&
+    !(lat === 0 && lng === 0)
+  );
+}
+
 function displayLightsOnMap() {
   if (!markersGroup) return;
   markersGroup.clearLayers();
   const bounds = [];
+  const allValidBounds = [];
 
   allLights.forEach(light => {
-    const marker = L.marker([light.lat, light.lng], { icon: getMarkerIcon(light.status) });
+    const lat = Number(light.lat);
+    const lng = Number(light.lng);
+    if (!isValidLatLng(lat, lng)) {
+      console.warn(`Skipping light with invalid coordinates: ${light.code || light.id}`, light.lat, light.lng);
+      return;
+    }
+
+    const marker = L.marker([lat, lng], { icon: getMarkerIcon(light.status) });
 
     const statusText = light.status === 'working' ? 'ใช้งานปกติ' : light.status === 'pending' ? 'กำลังซ่อมแซม' : 'ไฟดับ/ชำรุด';
     const badgeClass = light.status === 'working' ? 'badge-working' : light.status === 'pending' ? 'badge-pending' : 'badge-broken';
@@ -543,7 +563,7 @@ function displayLightsOnMap() {
           </div>
           <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted);">
             <i class="fa-solid fa-earth-asia" style="width: 14px;"></i>
-            <div>พิกัด: <span style="font-family: monospace;">${light.lat.toFixed(5)}, ${light.lng.toFixed(5)}</span></div>
+            <div>พิกัด: <span style="font-family: monospace;">${lat.toFixed(5)}, ${lng.toFixed(5)}</span></div>
           </div>
         </div>
 
@@ -570,11 +590,15 @@ function displayLightsOnMap() {
 
     marker.bindPopup(popupContent);
     markersGroup.addLayer(marker);
-    bounds.push([light.lat, light.lng]);
+    allValidBounds.push([lat, lng]);
+    if (lat >= 5 && lat <= 21 && lng >= 97 && lng <= 106) {
+      bounds.push([lat, lng]);
+    }
   });
 
-  if (bounds.length > 0 && allLights.length > 0 && !map._hasFitBounds) {
-    map.fitBounds(bounds, { padding: [50, 50] });
+  const fitTargets = bounds.length > 0 ? bounds : allValidBounds;
+  if (fitTargets.length > 0 && allLights.length > 0 && !map._hasFitBounds) {
+    map.fitBounds(fitTargets, { padding: [50, 50], maxZoom: 17 });
     map._hasFitBounds = true;
   }
 }
@@ -1337,6 +1361,19 @@ function initFormListeners() {
       const lat = parseFloat(document.getElementById('poleLat').value);
       const lng = parseFloat(document.getElementById('poleLng').value);
       const status = document.getElementById('poleStatus').value;
+
+      if (!isValidLatLng(lat, lng)) {
+        Swal.fire({
+          title: 'พิกัดไม่ถูกต้อง!',
+          text: 'กรุณากรอกค่าละติจูด (-90 ถึง 90) และลองจิจูด (-180 ถึง 180) ให้ถูกต้อง เช่น 6.28189, 101.71687',
+          icon: 'warning',
+          confirmButtonText: 'ตกลง',
+          background: '#161c2d',
+          color: '#f3f4f6',
+          confirmButtonColor: '#f59e0b'
+        });
+        return;
+      }
 
       const poleData = {
         code: code,
